@@ -10,12 +10,13 @@ rm(list=ls())
 library(dplyr)
 
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/"
-ncpdp_dir <- paste0(dir, "NCPDP_Univ of Utah/NCPDP_v3.1_Monthly_Master_20230601/")
+in_dir <- paste0(dir, "raw/NCPDP_Univ of Utah/NCPDP_v3.1_Monthly_Master_20230601/")
+out_dir <- paste0(dir, "processed/NCPDP/")
 
 # ------------------------------------------------------------------------------
 
 # Read the lines from the Provider Detail file
-provider_detail_6.1.2 <- paste0(ncpdp_dir, "mas.txt")
+provider_detail_6.1.2 <- paste0(in_dir, "mas.txt")
 lines <- readLines(provider_detail_6.1.2, encoding = "latin1")
 
 # Define the start and end positions for each field, from Table 6.1.2 on pg. 39
@@ -59,7 +60,7 @@ rm(extracted_data)
 
 # Note: "Closure Date" variable is not available for the full time series 
 
-data %>% filter(closure_date!="00000000") # 371 obs; all are from 2023
+data %>% filter(closure_date != "00000000") # 371 obs; all are from 2023
 
 # Note from Pg. 74, 8.1.15:
 # Provider Information will appear for 45 days after the NCPDP internal deletion date. 
@@ -67,18 +68,28 @@ data %>% filter(closure_date!="00000000") # 371 obs; all are from 2023
 # (same for the provider relationship file)
 
 
+# Closure year 
+
+data <- data %>% 
+  mutate(closure_year = ifelse(closure_date != "00000000", substr(closure_date, 5, 8), NA))
+
 # ------------------------------------------------------------------------------
 
 # Recode class and type vars (Tables 7.1 & 7.2, pg. 55)
 
 # Class 
 
-data <- data %>% mutate(classR = case_when(class == "01" ~ "Independent Pharmacy",
-                                           class == "02" ~ "Chain Pharmacy",
-                                           class == "05" ~ "Franchise Pharmacy",
-                                           class == "06" ~ "Government Pharmacy",
-                                           class == "07" ~ "Alternate Dispensing Site"
-                                           ))
+class_levels = c("Independent", "Chain", "Franchise", "Government", "Other") 
+
+data <- data %>% mutate(classR = case_when(class == "01" ~ "Independent",
+                                           class == "02" ~ "Chain",
+                                           class == "05" ~ "Franchise",
+                                           class == "06" ~ "Government",
+                                           class == "07" ~ "Other")) %>%
+  mutate(classR = factor(classR, levels = class_levels))
+  
+  
+  
 # Provider Type
 
 recode_function <- function(variable) {
@@ -115,4 +126,9 @@ for (v in type_vars) {
   data[[v]] <- recode_function(data[[v]])
 }
 
+# ------------------------------------------------------------------------------
 
+# Save
+
+saveRDS(data, paste0(out_dir, "ncpdp_cleaned.rds"))
+write.csv(data, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)

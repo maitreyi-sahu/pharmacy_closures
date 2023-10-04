@@ -1,0 +1,41 @@
+---
+title: "NCPDP Descriptives"
+author: "Maitreyi Sahu"
+date: "2023-10-04"
+output: pdf_document
+classoption: landscape
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary)
+
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
+in_dir <- paste0(dir, "00_data/processed/NCPDP/")
+
+data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
+  mutate(closure = ifelse(closure_date != "00000000", 1, 0),
+         "Year of Closure" = closure_year,
+         "Pharmacy Type" = classR)
+
+```
+
+
+## Number of total pharmacies by pharmacy type
+
+```{r, echo = F, warning = F, message = F}
+
+data %>% select(`Pharmacy Type`) %>%  tbl_summary() 
+
+```
+
+## Number of closures by pharmacy type and year
+
+```{r, echo = F, warning = F, message = F}
+
+data %>% tbl_cross(row = `Pharmacy Type`, 
+                   col = `Year of Closure`, 
+                   percent = "col", missing = "no") 
+
+```
