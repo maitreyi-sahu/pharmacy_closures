@@ -1,15 +1,14 @@
 ---
 title: "NCPDP Descriptives"
 author: "Maitreyi Sahu"
-date: "2023-10-04"
-output: pdf_document
-classoption: landscape
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=ls())
-pacman::p_load(dplyr, gtsummary)
+pacman::p_load(dplyr, gtsummary, flextable, ggplot2)
 
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/processed/NCPDP/")
@@ -19,6 +18,11 @@ data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>%
          "Year of Closure" = closure_year,
          "Pharmacy Type" = classR)
 
+# Table output for Word (change YAML to "word_document")
+# theme_gtsummary_printer(
+#   print_engine = "flextable",
+#   set_theme = TRUE
+# )
 ```
 
 
@@ -38,4 +42,22 @@ data %>% tbl_cross(row = `Pharmacy Type`,
                    col = `Year of Closure`, 
                    percent = "col", missing = "no") 
 
+```
+
+## Figure: Pharmacy closures by pharmacy type and year
+
+```{r, echo = F}
+ggplot(data = data, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closure)) + 
+  geom_bar(position="stack", stat="identity") +
+  ylab("Frequency") +
+  theme_bw()  
+```
+
+## Figure: Pharmacy closures by whether open 24 hours and year
+
+```{r, echo = F}
+ggplot(data = data, aes(fill = open24hours, x = `Year of Closure`, y = closure)) + 
+  geom_bar(position="stack", stat="identity") +
+  ylab("Frequency") +
+  theme_bw()  
 ```
