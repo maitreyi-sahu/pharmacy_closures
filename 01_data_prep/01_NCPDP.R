@@ -91,7 +91,7 @@ data <- data %>% mutate(classR = case_when(class == "01" ~ "Independent",
   
   
 # Provider Type
-
+  
 recode_function <- function(variable) {
   
   variable <- case_when(
@@ -115,7 +115,7 @@ recode_function <- function(variable) {
     variable == "20" ~ "Nursing Facility Supplies",
     variable == "21" ~ "Customized Equipment",
     variable == "22" ~ "Dialysis Equipment",
-    variable == "23" ~ "Parenteral and Enteral Nutrition")
+    variable == "23" ~ "Parenteral and Enteral Nutrition") 
   
   return(variable)
 }
