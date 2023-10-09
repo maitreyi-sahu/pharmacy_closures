@@ -7,10 +7,24 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
 rm(list=ls())
 pacman::p_load(dplyr, gtsummary, flextable, ggplot2,
                usmap, wesanderson)
 
+# Word doc options 
+# theme_gtsummary_printer(
+#   print_engine = "flextable",
+#   set_theme = TRUE
+# )
+# YAML:
+# output: 
+#  word_document:
+#    reference_docx: word_styles.docx
+
+
+# Load and clean data
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/processed/NCPDP/")
 
@@ -23,11 +37,6 @@ data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>%
 
 dataset_name <- "National Council for Prescription Drug Programs (NCDP), June 2023"
 
-# Table output for Word (change YAML to "word_document")
-# theme_gtsummary_printer(
-#   print_engine = "flextable",
-#   set_theme = TRUE
-# )
 ```
 
 
@@ -111,18 +120,18 @@ stateDF <- data %>%  group_by(state_code) %>% summarize(closures_n = sum(closure
 plot_usmap(data = stateDF, regions = "states", values = "closures_n") + 
   labs(title = "Pharmacy closures by US state",
        subtitle = dataset_name) + 
-  scale_fill_continuous(name = "Closures (n)", label = scales::comma) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
   theme(legend.position = "right")  
 ```
 
 # Figure: Pharmacy closures by county
 
 ```{r, echo = F, warning = F}
-countyDF <- data %>%  group_by(county_fips) %>% summarize(closures_n = sum(closure)) %>% rename(fips = county_fips) %>% filter( fips!= "" & closures_n != 0)
+countyDF <- data %>%  group_by(county_fips) %>% summarize(closures_n = sum(closure)) %>% rename(fips = county_fips) %>% filter( fips!= "")
 
 plot_usmap(data = countyDF, regions = "counties", values = "closures_n") + 
   labs(title = "Pharmacy closures by US county",
-       subtitle = dataset_name) + 
-  scale_fill_continuous(name = "Closures (n)", label = scales::comma) + 
+       subtitle = paste0(dataset_name, " [Note: gray counties didn't map from NCPDP data]")) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
   theme(legend.position = "right")  
 ```
