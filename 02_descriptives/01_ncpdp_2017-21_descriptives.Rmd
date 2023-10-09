@@ -1,0 +1,137 @@
+---
+title: "NCPDP Descriptives"
+author: "Maitreyi Sahu"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, flextable, ggplot2,
+               usmap, wesanderson)
+
+# Word doc options 
+# theme_gtsummary_printer(
+#   print_engine = "flextable",
+#   set_theme = TRUE
+# )
+# YAML:
+# output: 
+#  word_document:
+#    reference_docx: word_styles.docx
+
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
+in_dir <- paste0(dir, "00_data/processed/NCPDP/")
+
+data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
+  mutate(closure = ifelse(closure_date != "00000000", 1, 0),
+         "Pharmacy Closures" = closure,
+         "Year of Closure" = closure_year,
+         "Pharmacy Type" = classR,
+         `Open 24 Hours?` = ifelse(open24hours == "Y", "Yes", "No"))
+
+dataset_name <- "National Council for Prescription Drug Programs (NCDP), June 2023"
+
+```
+
+
+## Tabulated frequencies
+
+```{r, echo = F, warning = F, message = F}
+
+data %>% select(`Pharmacy Closures`, `Year of Closure`, `Pharmacy Type`, `Open 24 Hours?`) %>%  tbl_summary() 
+
+```
+
+## Number of closures by pharmacy type and year
+
+```{r, echo = F, warning = F, message = F}
+
+data %>% tbl_cross(row = `Pharmacy Type`, 
+                   col = `Year of Closure`, 
+                   percent = "col", missing = "no") 
+
+```
+
+### Figure: Pharmacy closures by pharmacy type and year
+
+```{r, echo = F}
+ggplot(data = data, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closure)) + 
+  geom_bar(position="stack", stat="identity") +
+  ylab("Frequency") +
+  theme_bw()  
+```
+
+### Figure: Pharmacy closures by whether open 24 hours and year
+
+```{r, echo = F}
+ggplot(data = data, aes(fill = `Open 24 Hours?`, x = `Year of Closure`, y = closure)) + 
+  geom_bar(position="stack", stat="identity") +
+  ylab("Frequency") +
+  theme_bw()  
+
+# PIE CHART - NO
+# ggplot(df, aes(x = "", y = "closure", fill = "Open 24 hours?")) +
+#   geom_bar(stat="identity", width=1) +
+#   coord_polar("y", start=0)
+
+```
+
+### Figure: Pharmacy closures by "Type1"
+
+```{r, echo = F}
+df <- data %>% na.omit(type1)
+ggplot(data = df, aes(x = type1, y = closure, fill = type1)) + 
+  geom_bar(stat="identity") +
+  ylab("Frequency") +
+  theme_bw() + coord_flip()  
+```
+
+### Figure: Pharmacy closures by "Type2" (colors not consistent, sorry)
+
+```{r, echo = F}
+df <- data %>% na.omit(type2)
+ggplot(data = df, aes(x = type2, y = closure, fill = type2)) + 
+  geom_bar(stat="identity") +
+  ylab("Frequency") +
+  theme_bw() + coord_flip() 
+```
+
+### Figure: Pharmacy closures by "Type3" (colors not consistent, sorry)
+
+```{r, echo = F}
+df <- data %>% na.omit(type3)
+ggplot(data = df, aes(x = type3, y = closure, fill = type3)) + 
+  geom_bar(stat="identity") +
+  ylab("Frequency") +
+  theme_bw() + coord_flip()  
+```
+
+## Figure: Pharmacy closures by state
+
+```{r, echo = F, warning = F}
+stateDF <- data %>%  group_by(state_code) %>% summarize(closures_n = sum(closure)) %>% rename(state = state_code)
+
+plot_usmap(data = stateDF, regions = "states", values = "closures_n") + 
+  labs(title = "Pharmacy closures by US state",
+       subtitle = dataset_name) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
+  theme(legend.position = "right")  
+```
+
+# Figure: Pharmacy closures by county
+
+```{r, echo = F, warning = F}
+countyDF <- data %>%  group_by(county_fips) %>% summarize(closures_n = sum(closure)) %>% rename(fips = county_fips) %>% filter( fips!= "")
+
+plot_usmap(data = countyDF, regions = "counties", values = "closures_n") + 
+  labs(title = "Pharmacy closures by US county",
+       subtitle = paste0(dataset_name, " [Note: gray counties didn't map from NCPDP data]")) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
+  theme(legend.position = "right")  
+```

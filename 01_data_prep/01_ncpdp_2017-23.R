@@ -67,15 +67,17 @@ rm(extracted_data)
 
 openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmarcy_Report_2017-2023.xlsx"), 
                            skip = 4) %>% 
+  mutate(open24hours = ifelse(`Sunday 24 Hours` == "Y" & `Monday 24 \r\nHours` == "Y" & `Tuesday 24 \r\nHours` == "Y" & `Wednesday 24 \r\nHours` == "Y" & `Thursday 24 \r\nHours` == "Y" & `Friday 24 Hours` == "Y" & `Saturday 24 \r\nHours` == "Y", 
+                              "Y", "N")) %>% 
   select(`Pharmacy NCPDP No`, `Pharmacy Legal Name`, `Pharmacy DBA Name`, 
          `State Physical`, `County Code`,  
-         `Dispenser Class\r\nCode`, `Dispenser Type Code`,
+         `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
          `Store Open Date`) %>% 
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
          ncpdp_name = `Pharmacy DBA Name`,
          state_code = `State Physical`,
-         fips_code = `County Code`,
+         county_fips = `County Code`,
          class = `Dispenser Class\r\nCode`,
          type1 = `Dispenser Type Code`) %>% 
   mutate(open_date = as.Date(`Store Open Date`, format = "%m/%d/%Y"),
@@ -88,15 +90,17 @@ openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmarcy_Report_2017-2023.xlsx"
 
 closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmarcy_Report_2017-2023.xlsx"), 
                            skip = 4) %>% 
+  mutate(open24hours = ifelse(`Sunday 24 Hours` == "Y" & `Monday 24 \r\nHours` == "Y" & `Tuesday 24 \r\nHours` == "Y" & `Wednesday 24 \r\nHours` == "Y" & `Thursday 24 \r\nHours` == "Y" & `Friday 24 Hours` == "Y" & `Saturday 24 \r\nHours` == "Y", 
+                              "Y", "N")) %>% 
   select(`Pharmacy NCPDP No`, `Pharmacy Legal Name`, `Pharmacy DBA Name`, 
          `State Physical`, `County Code`,  
-         `Dispenser Class\r\nCode`, `Dispenser Type Code`,
+         `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
          `Store Close Date`) %>% 
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
          ncpdp_name = `Pharmacy DBA Name`,
          state_code = `State Physical`,
-         fips_code = `County Code`,
+         county_fips = `County Code`,
          class = `Dispenser Class\r\nCode`,
          type1 = `Dispenser Type Code`) %>% 
   mutate(closure_date = as.Date(`Store Close Date`, format = "%m/%d/%Y"),
@@ -107,33 +111,17 @@ closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmarcy_Report_2017-2023.xls
 
 # COMBINE AND DROP DUPLICATES
 
-# Function to handle duplicates by selecting rows
+combined_pharmacies <- plyr::rbind.fill(active2023, openings17_23, closures17_23) %>% 
+  
+  # Order by closure and open date, so these are on top
+  
+  arrange(desc(closure_date), desc(open_date)) %>% 
+  
+  # Select only the top row
+  
+  group_by(ncpdp_id) %>% slice(1) %>% ungroup() 
 
-select_rows_for_duplicates <- function(df) {
-  
-  # Initialize a variable to store the selected row
-  selected_row <- NULL
-  
-  # Check if openings17_23 has non-missing values in the 'open_date' column
-  if (any(!is.na(openings17_23$open_date))) {
-    
-    selected_row <- openings17_23
-    
-  } else if (any(!is.na(closures17_23$closure_date))) {
-    
-    selected_row <- closures17_23
-  
-  } else {
-    
-    selected_row <- active2023
-  }
-  
-  return(selected_row)
-}
-
-# Apply the function to each group of duplicates based on the 'ID' column
-
-combined_pharmacies <- plyr::ddply(plyr::rbind.fill(active2023, openings17_23, closures17_23), "ncpdp_id", select_rows_for_duplicates)
+# If needed, can merge back active2023 type2/type3 info - not included for now
 
 # ------------------------------------------------------------------------------
 
@@ -190,5 +178,5 @@ for (v in type_vars) {
 
 # Save
 
-saveRDS(data, paste0(out_dir, "ncpdp_cleaned.rds"))
-write.csv(data, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)
+saveRDS(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.rds"))
+write.csv(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)

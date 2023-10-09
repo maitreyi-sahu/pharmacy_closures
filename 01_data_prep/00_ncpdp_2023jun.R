@@ -130,5 +130,5 @@ for (v in type_vars) {
 
 # Save
 
-saveRDS(data, paste0(out_dir, "ncpdp_cleaned.rds"))
-write.csv(data, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)
+saveRDS(data, paste0(out_dir, "ncpdp_cleaned_jun2023.rds"))
+write.csv(data, paste0(out_dir, "ncpdp_cleaned_jun2023.csv"), row.names = F)
