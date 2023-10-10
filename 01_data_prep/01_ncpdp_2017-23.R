@@ -5,7 +5,10 @@
 # Steps:
 # 	1. Start with active pharmacies in June 2023
 #   2. Add any pharmacies that opened from Jan 1, 2017 to June 2023
-#   3. Add closures from Jan 1, 2017 to June 2023
+#   3. Load closures from Jan 1, 2017 to June 2023
+#   4. Combine
+#   5. Clean/recode variables
+#   6. Denominators for each year - active pharmacies on Jan 1 of that year
 
 # ------------------------------------------------------------------------------
 
@@ -173,6 +176,18 @@ type_vars <- c("type1", "type2", "type3")
 for (v in type_vars) {
   combined_pharmacies[[v]] <- recode_function(combined_pharmacies[[v]])
 }
+
+# ------------------------------------------------------------------------------
+
+# Find active pharmacies for Jan 1 of each year, 2017-2022
+
+combined_pharmacies <- combined_pharmacies %>% 
+  
+  mutate(active2017jan = ifelse(is.na(open_year) | open_year < 2017, 1, 0),
+         active2018jan = ifelse(is.na(open_year) | open_year < 2018, 1, 0),
+         active2019jan = ifelse(is.na(open_year) | open_year < 2019, 1, 0),
+         active2020jan = ifelse(is.na(open_year) | open_year < 2020, 1, 0),
+         active2021jan = ifelse(is.na(open_year) | open_year < 2021, 1, 0))
 
 # ------------------------------------------------------------------------------
 

@@ -29,13 +29,13 @@ dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/processed/NCPDP/")
 
 data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
-  mutate(closure = ifelse(closure_date != "00000000", 1, 0),
+  mutate(closure = ifelse(is.na(closure_date), 0, 1),
          "Pharmacy Closures" = closure,
          "Year of Closure" = closure_year,
          "Pharmacy Type" = classR,
          `Open 24 Hours?` = ifelse(open24hours == "Y", "Yes", "No"))
 
-dataset_name <- "National Council for Prescription Drug Programs (NCDP), June 2023"
+dataset_name <- "National Council for Prescription Drug Programs (NCDP), 2017 - 2021"
 
 ```
 
