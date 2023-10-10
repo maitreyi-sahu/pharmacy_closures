@@ -184,10 +184,24 @@ for (v in type_vars) {
 combined_pharmacies <- combined_pharmacies %>% 
   
   mutate(active2017jan = ifelse(is.na(open_year) | open_year < 2017, 1, 0),
-         active2018jan = ifelse(is.na(open_year) | open_year < 2018, 1, 0),
-         active2019jan = ifelse(is.na(open_year) | open_year < 2019, 1, 0),
-         active2020jan = ifelse(is.na(open_year) | open_year < 2020, 1, 0),
-         active2021jan = ifelse(is.na(open_year) | open_year < 2021, 1, 0))
+         active2018jan = ifelse((is.na(open_year) | open_year < 2018) & !closure_year %in% 2017, 1, 0),
+         active2019jan = ifelse((is.na(open_year) | open_year < 2019) & !closure_year %in% 2017:2018, 1, 0),
+         active2020jan = ifelse((is.na(open_year) | open_year < 2020) & !closure_year %in% 2017:2019, 1, 0),
+         active2021jan = ifelse((is.na(open_year) | open_year < 2021) & !closure_year %in% 2017:2020, 1, 0))
+
+# ------------------------------------------------------------------------------
+
+# Filter to only 50 states
+
+postal_codes_50_states <- c(
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+)
+
+combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_codes_50_states)
 
 # ------------------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 ---
-title: "NCPDP Descriptives"
+title: "NCPDP Descriptives for 2017-2021"
 author: "Maitreyi Sahu"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup
 rm(list=ls())
-pacman::p_load(dplyr, gtsummary, flextable, ggplot2,
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
                usmap, wesanderson)
 
 # Word doc options 
@@ -28,23 +28,30 @@ pacman::p_load(dplyr, gtsummary, flextable, ggplot2,
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/processed/NCPDP/")
 
-data <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
+data17_21 <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
+  
+  # Restrict to only those open between 2017-2021
+  
+  filter(is.na(closure_year) | closure_year < 2022) %>% 
+  
+  # Clean vars
   mutate(closure = ifelse(is.na(closure_date), 0, 1),
-         "Pharmacy Closures" = closure,
-         "Year of Closure" = closure_year,
+         closure17_21 = ifelse(!is.na(closure_date) & closure_year %in% 2017:2021, 1, 0),
+         "Pharmacy Closures" = closure17_21,
+         "Year of Closure" = ifelse(closure17_21 ==1, closure_year, NA),
          "Pharmacy Type" = classR,
          `Open 24 Hours?` = ifelse(open24hours == "Y", "Yes", "No"))
 
-dataset_name <- "National Council for Prescription Drug Programs (NCDP), 2017 - 2021"
+dataset_name <- "National Council for Prescription Drug Programs (NCDP), 2017-21"
 
 ```
 
 
-## Tabulated frequencies
+## Tabulated frequencies for all pharmacies open from 2017-2021
 
 ```{r, echo = F, warning = F, message = F}
 
-data %>% select(`Pharmacy Closures`, `Year of Closure`, `Pharmacy Type`, `Open 24 Hours?`) %>%  tbl_summary() 
+data17_21 %>% select(`Pharmacy Closures`, `Year of Closure`, `Pharmacy Type`, `Open 24 Hours?`) %>%  tbl_summary(missing_text = "Remained open") 
 
 ```
 
@@ -52,16 +59,68 @@ data %>% select(`Pharmacy Closures`, `Year of Closure`, `Pharmacy Type`, `Open 2
 
 ```{r, echo = F, warning = F, message = F}
 
-data %>% tbl_cross(row = `Pharmacy Type`, 
+data17_21 %>% tbl_cross(row = `Pharmacy Type`, 
                    col = `Year of Closure`, 
-                   percent = "col", missing = "no") 
+                   percent = "col", missing = "no") %>% 
+  add_p(test = "chisq.test")
 
 ```
 
+## Percent of closures by pharmacy type and year
+
+```{r, echo = F, warning = F, message = F}
+
+data17_21 <- data17_21 %>% 
+  group_by(classR) %>% 
+  mutate(total2017jan = sum(active2017jan),
+         total2018jan = sum(active2018jan),
+         total2019jan = sum(active2019jan),
+         total2020jan = sum(active2020jan),
+         total2021jan = sum(active2021jan),
+         closure_denominator = case_when(
+           closure_year == 2017 ~ total2017jan,
+           closure_year == 2018 ~ total2018jan,
+           closure_year == 2019 ~ total2019jan, 
+           closure_year == 2020 ~ total2020jan,
+           closure_year == 2021 ~ total2021jan,
+           T ~ NA))
+
+tbl <- data17_21 %>% group_by(closure_year, classR) %>% 
+  summarize(closures_n = sum(closure17_21),
+            pharmacies_n = mean(closure_denominator)) %>% 
+  filter(!is.na(closure_year)) %>% 
+  mutate(`closures_pct` = 100 * (closures_n / pharmacies_n) %>% round(3)) 
+
+tbl <- tbl %>% 
+  tidyr::pivot_wider(names_from = closure_year, values_from = c(closures_n, pharmacies_n, closures_pct)) %>% 
+  select(classR, 
+         closures_n_2017, pharmacies_n_2017, closures_pct_2017,
+         closures_n_2018, pharmacies_n_2018, closures_pct_2018,
+         closures_n_2019, pharmacies_n_2019, closures_pct_2019,
+         closures_n_2020, pharmacies_n_2020, closures_pct_2020,
+         closures_n_2021, pharmacies_n_2021, closures_pct_2021)
+
+# Create the kable table with kableExtra
+kable(tbl, format = "html", col.names = NULL) %>%
+  add_header_above(
+    c(" " = 1, 
+    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1,
+    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1, 
+    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1, 
+    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)"= 1, 
+    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1),
+    align = "c") %>%
+  add_header_above(
+     c("Class" = 1, "2017" = 3, "2018" = 3, "2019" = 3, "2020" = 3, "2021" = 3),
+     align = "c") %>%
+  kable_styling(full_width = FALSE) 
+```
+
+
 ### Figure: Pharmacy closures by pharmacy type and year
 
-```{r, echo = F}
-ggplot(data = data, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closure)) + 
+```{r, echo = F, warning = F, message = F}
+ggplot(data = data17_21, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closure)) + 
   geom_bar(position="stack", stat="identity") +
   ylab("Frequency") +
   theme_bw()  
@@ -69,8 +128,8 @@ ggplot(data = data, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closu
 
 ### Figure: Pharmacy closures by whether open 24 hours and year
 
-```{r, echo = F}
-ggplot(data = data, aes(fill = `Open 24 Hours?`, x = `Year of Closure`, y = closure)) + 
+```{r, echo = F, warning = F, message = F}
+ggplot(data = data17_21, aes(fill = `Open 24 Hours?`, x = `Year of Closure`, y = closure)) + 
   geom_bar(position="stack", stat="identity") +
   ylab("Frequency") +
   theme_bw()  
@@ -82,56 +141,63 @@ ggplot(data = data, aes(fill = `Open 24 Hours?`, x = `Year of Closure`, y = clos
 
 ```
 
-### Figure: Pharmacy closures by "Type1"
+### Figure: Pharmacy closures by "Type1", 2017-21
 
-```{r, echo = F}
-df <- data %>% na.omit(type1)
-ggplot(data = df, aes(x = type1, y = closure, fill = type1)) + 
+```{r, echo = F, fig.width = 10}
+df <- data17_21 %>% filter(!is.na(type1) )
+ggplot(data = df, aes(x = type1, y = closure17_21, fill = type1)) + 
   geom_bar(stat="identity") +
   ylab("Frequency") +
-  theme_bw() + coord_flip()  
+  theme_bw() + coord_flip() +
+  theme(legend.position = "none") 
 ```
 
-### Figure: Pharmacy closures by "Type2" (colors not consistent, sorry)
-
-```{r, echo = F}
-df <- data %>% na.omit(type2)
-ggplot(data = df, aes(x = type2, y = closure, fill = type2)) + 
-  geom_bar(stat="identity") +
-  ylab("Frequency") +
-  theme_bw() + coord_flip() 
-```
-
-### Figure: Pharmacy closures by "Type3" (colors not consistent, sorry)
-
-```{r, echo = F}
-df <- data %>% na.omit(type3)
-ggplot(data = df, aes(x = type3, y = closure, fill = type3)) + 
-  geom_bar(stat="identity") +
-  ylab("Frequency") +
-  theme_bw() + coord_flip()  
-```
-
-## Figure: Pharmacy closures by state
+## Figure: Number of pharmacy closures by state, 2017-2021
 
 ```{r, echo = F, warning = F}
-stateDF <- data %>%  group_by(state_code) %>% summarize(closures_n = sum(closure)) %>% rename(state = state_code)
+data17_21 <-  data17_21 %>%  mutate(active17_21 = ifelse(active2017jan ==1 | active2018jan == 1 | active2019jan == 1 | active2020jan == 1 | active2021jan ==1, 1, 0))
+
+stateDF <- data17_21 %>%  group_by(state_code) %>% 
+  summarize(closures_n = sum(closure17_21), active_n = sum(active17_21), closures_pct = 100 * (closures_n/active_n)) %>% 
+  rename(state = state_code)
 
 plot_usmap(data = stateDF, regions = "states", values = "closures_n") + 
-  labs(title = "Pharmacy closures by US state",
+  labs(title = "Pharmacy closures by US state (N)",
        subtitle = dataset_name) + 
   scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
   theme(legend.position = "right")  
 ```
 
-# Figure: Pharmacy closures by county
+## Figure: Percent of pharmacy closures by state, 2017-2021
 
 ```{r, echo = F, warning = F}
-countyDF <- data %>%  group_by(county_fips) %>% summarize(closures_n = sum(closure)) %>% rename(fips = county_fips) %>% filter( fips!= "")
+plot_usmap(data = stateDF, regions = "states", values = "closures_pct") + 
+  labs(title = "Pharmacy closures by US state (%)",
+       subtitle = dataset_name) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (%)", label = scales::comma) + 
+  theme(legend.position = "right")  
+```
+
+# Figure: Number of pharmacy closures by county, 2017-2021
+
+```{r, echo = F, warning = F}
+countyDF <- data17_21 %>%  group_by(county_fips) %>% 
+  summarize(closures_n = sum(closure17_21), active_n = sum(active17_21), closures_pct = 100 * (closures_n/active_n)) %>% 
+  rename(fips = county_fips) %>% filter( fips!= "")
 
 plot_usmap(data = countyDF, regions = "counties", values = "closures_n") + 
-  labs(title = "Pharmacy closures by US county",
-       subtitle = paste0(dataset_name, " [Note: gray counties didn't map from NCPDP data]")) + 
+  labs(title = "Pharmacy closures by US county (N)",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
   scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
+  theme(legend.position = "right")  
+```
+
+# Figure: Percent of pharmacy closures by county, 2017-2021
+
+```{r, echo = F, warning = F}
+plot_usmap(data = countyDF, regions = "counties", values = "closures_pct") + 
+  labs(title = "Pharmacy closures by US county (%)",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (%)", label = scales::comma) + 
   theme(legend.position = "right")  
 ```
