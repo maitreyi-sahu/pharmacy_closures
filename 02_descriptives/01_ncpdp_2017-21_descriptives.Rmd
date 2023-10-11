@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Setup
 rm(list=ls())
 pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
-               usmap, wesanderson)
+               usmap, RColorBrewer, wesanderson)
 
 # Word doc options 
 # theme_gtsummary_printer(
@@ -40,6 +40,7 @@ data17_21 <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>%
          "Pharmacy Closures" = closure17_21,
          "Year of Closure" = ifelse(closure17_21 ==1, closure_year, NA),
          "Pharmacy Type" = classR,
+         `Chain Name` = chain_name,
          `Open 24 Hours?` = ifelse(open24hours == "Y", "Yes", "No"))
 
 dataset_name <- "National Council for Prescription Drug Programs (NCDP), 2017-21"
@@ -104,11 +105,11 @@ tbl <- tbl %>%
 kable(tbl, format = "html", col.names = NULL) %>%
   add_header_above(
     c(" " = 1, 
-    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1,
-    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1, 
-    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1, 
-    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)"= 1, 
-    "Closures (n)" = 1, "Active (n)" = 1, "Closures (%)" = 1),
+    "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)" = 1,
+    "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)" = 1, 
+    "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)" = 1, 
+    "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)"= 1, 
+    "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)" = 1),
     align = "c") %>%
   add_header_above(
      c("Class" = 1, "2017" = 3, "2018" = 3, "2019" = 3, "2020" = 3, "2021" = 3),
@@ -122,6 +123,16 @@ kable(tbl, format = "html", col.names = NULL) %>%
 ```{r, echo = F, warning = F, message = F}
 ggplot(data = data17_21, aes(fill = `Pharmacy Type`, x = `Year of Closure`, y = closure)) + 
   geom_bar(position="stack", stat="identity") +
+  ylab("Frequency") +
+  theme_bw()  
+```
+
+### Figure: Closures by pharmacy chain and year, for chain pharmacies only
+
+```{r, echo = F, warning = F, message = F}
+ggplot(data = data17_21 %>% filter(classR == "Chain"), aes(fill = `Chain Name`, x = `Year of Closure`, y = closure)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_brewer(palette = "Set3") +  # Use a palette with 12 colors
   ylab("Frequency") +
   theme_bw()  
 ```

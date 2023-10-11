@@ -177,6 +177,29 @@ for (v in type_vars) {
   combined_pharmacies[[v]] <- recode_function(combined_pharmacies[[v]])
 }
 
+# Chain Names
+
+combined_pharmacies <- combined_pharmacies %>% 
+  mutate(chain_name = ifelse(classR == "Chain", 
+                               case_when(
+                                 grepl("^CVS", legal_name) ~ "CVS",
+                                 grepl("^Walgreen", legal_name) ~ "Walgreens",
+                                 grepl("^WALGREEN", legal_name) ~ "Walgreens",
+                                 grepl("^Cigna", legal_name) ~ "Cigna",
+                                 grepl("^WAL-MART", legal_name) ~ "Walmart",
+                                 grepl("^WALMART", legal_name) ~ "Walmart",
+                                 grepl("^RITE AID", legal_name) ~ "Rite Aid",
+                                 grepl("^PUBLIX", legal_name) ~ "Publix",
+                                 grepl("^KROGER", legal_name) ~ "Kroger",
+                                 # grepl("^COSTCO", legal_name) ~ "Costco", 
+                                 grepl("^ALBERTSONS", legal_name) ~ "Albertsons", 
+                                 grepl("^SAFEWAY", legal_name) ~ "Safeway",  
+                                 grepl("^THRIFTY", legal_name) ~ "Thrifty PayLess", 
+                                 grepl("^ECKERD", legal_name) ~ "Eckerd", 
+                                 grepl("^K MART", legal_name) ~ "Kmart", 
+                                 T ~ "Other"), 
+                             NA))
+
 # ------------------------------------------------------------------------------
 
 # Find active pharmacies for Jan 1 of each year, 2017-2022
