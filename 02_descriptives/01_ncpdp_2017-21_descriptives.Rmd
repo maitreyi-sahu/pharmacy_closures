@@ -112,7 +112,7 @@ kable(tbl, format = "html", col.names = NULL) %>%
     "Closures (n)" = 1, "Total (n)" = 1, "Closures (%)" = 1),
     align = "c") %>%
   add_header_above(
-     c("Class" = 1, "2017" = 3, "2018" = 3, "2019" = 3, "2020" = 3, "2021" = 3),
+     c(" " = 1, "2017" = 3, "2018" = 3, "2019" = 3, "2020" = 3, "2021" = 3),
      align = "c") %>%
   kable_styling(full_width = FALSE) 
 ```
