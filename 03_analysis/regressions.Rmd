@@ -53,16 +53,14 @@ m1.rr <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), d
 beta1hat <- fixef(m1.rr)[[2]]
 rr <- exp(beta1hat)
 se <- summary(m1.rr)$coef[, 2, drop = FALSE]["unemployment_pct", ] 
-rr_ci <- exp(beta1hat - qnorm(0.975)*se, 
-             beta1hat + qnorm(0.975)*se)
+rr_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
 
 # ODDS RATIO using logistic regression, and 95% CI
 m2.or <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "logit"))
 beta1hat <- fixef(m2.or)[[2]]
-rr <- exp(beta1hat)
+or <- exp(beta1hat)
 se <- summary(m2.or)$coef[, 2, drop = FALSE]["unemployment_pct", ] 
-rr_ci <- exp(beta1hat - qnorm(0.975)*se, 
-             beta1hat + qnorm(0.975)*se)
+or_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
 ```
 
 ```{r, echo = F, warning = F, message = F}
@@ -75,12 +73,59 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
     
     
     
-### Risk of pharmacy closures on ln(labor force), with a fixed effect for year and random effect for county [economic variable is lagged by 1 year]
 
-```{r, echo = F, warning = F, message = F}
+### Risk of pharmacy closures on labor force, with a fixed effect for year [economic variable is lagged by 1 year]
+### Note, probably need to log or normalize this variable
 
+```{r, echo = T}
+# RISK RATIO using log-binomial regression, and 95% CI
+m1.rr <- glm(Closure ~ labor_force + as.factor(Year), data = df, family = binomial(link = "log"))
+rr <- exp(coef(m1.rr)[[2]])
+rr_ci <- exp(confint(m1.rr)["labor_force", ])
+
+# ODDS RATIO using logistic regression, and 95% CI
+m2.or <- glm(Closure ~ labor_force + as.factor(Year), data = df, family = binomial(link = "logit"))
+or <- exp(coef(m2.or)[[2]])
+or_ci <- exp(confint(m2.or)["labor_force", ])
 ```
 
+```{r, echo = F, warning = F, message = F}
+# Table
+table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
+colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
+rownames(table) = c("Risk Ratio", "Odds Ratio")
+kable(table, digits = 2)  %>% kable_styling(full_width = F)
+```
+
+  
+  
+
+### Risk of pharmacy closures on ln(labor force), with a fixed effect for year and random effect for county [economic variable is lagged by 1 year]
+
+```{r, echo = T}
+# RISK RATIO using log-binomial regression, and 95% CI
+m1.rr <- glmer(Closure ~ labor_force + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
+beta1hat <- fixef(m1.rr)[[2]]
+rr <- exp(beta1hat)
+se <- summary(m1.rr)$coef[, 2, drop = FALSE]["labor_force", ] 
+rr_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
+
+# ODDS RATIO using logistic regression, and 95% CI
+m2.or <- glmer(Closure ~ labor_force + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "logit"))
+beta1hat <- fixef(m2.or)[[2]]
+or <- exp(beta1hat)
+se <- summary(m2.or)$coef[, 2, drop = FALSE]["labor_force", ] 
+or_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
+```
+
+
+```{r, echo = F, warning = F, message = F}
+# Table
+table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
+colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
+rownames(table) = c("Risk Ratio", "Odds Ratio")
+kable(table, digits = 2)  %>% kable_styling(full_width = F)
+```
   
   
 
