@@ -100,11 +100,11 @@ openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmacy_Report_2017-2023.xlsx")
          address_street = `Address1 - Physical`, 
          address_street2 = `Address2 - Physical\r\n`,
          address_city = `City Physical`,
-         address_state = `State Physical`,
          address_zip = `Zip Code \r\nas reported`
          ) %>% 
   
-  mutate(open_date = as.Date(`Store Open Date`, format = "%m/%d/%Y"),
+  mutate(address_state = state_code,
+         open_date = as.Date(`Store Open Date`, format = "%m/%d/%Y"),
          open_year = as.integer(format(open_date, "%Y"))) %>% 
   
   select(-`Store Open Date`)
@@ -135,11 +135,11 @@ closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmacy_Report_2017-2023.xlsx
          address_street = `Address1 - Physical`, 
          address_street2 = `Address2 - Physical\r\n`,
          address_city = `City Physical`,
-         address_state = `State Physical`,
          address_zip = `Zip Code \r\nas reported`
   ) %>% 
   
-  mutate(closure_date = as.Date(`Store Close Date`, format = "%m/%d/%Y"),
+  mutate(address_state = state_code,
+         closure_date = as.Date(`Store Close Date`, format = "%m/%d/%Y"),
          closure_year = as.integer(format(closure_date, "%Y"))) %>% 
   
   select(-`Store Close Date`)
@@ -247,6 +247,8 @@ combined_pharmacies <- combined_pharmacies %>%
          activeJan2019 = ifelse((is.na(open_year) | open_year < 2019) & !closure_year %in% 2017:2018, 1, 0),
          activeJan2020 = ifelse((is.na(open_year) | open_year < 2020) & !closure_year %in% 2017:2019, 1, 0),
          activeJan2021 = ifelse((is.na(open_year) | open_year < 2021) & !closure_year %in% 2017:2020, 1, 0),
+         
+         active17_21 = ifelse(activeJan2017 ==1 | activeJan2018 == 1 | activeJan2019 == 1 | activeJan2020 == 1 | activeJan2021 ==1, 1, 0),
   
           # Closures for each year and the full time period
          

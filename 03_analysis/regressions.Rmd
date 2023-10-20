@@ -8,9 +8,26 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+rm(list=ls())
+
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 data_dir <- paste0(dir, "00_data/processed/")
 
-readRDS(paste0(data_dir, "merged_data_long.rds"))
+df <- readRDS(paste0(data_dir, "merged_data_long_lagged.rds"))
 
 ```
+
+# Regressions of economic variables on closures
+
+```{r, echo = F, warning = F, message = F}
+
+
+
+```
+
+# Forest plot
+
+```{r}
+
+```
+

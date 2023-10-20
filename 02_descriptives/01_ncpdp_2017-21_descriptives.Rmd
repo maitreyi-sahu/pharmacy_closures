@@ -158,8 +158,6 @@ ggplot(data = df, aes(x = type1, y = closure17_21, fill = type1)) +
 ## Figure: Number of pharmacy closures by state, 2017-2021
 
 ```{r, echo = F, warning = F}
-data17_21 <-  data17_21 %>%  mutate(active17_21 = ifelse(activeJan2017 ==1 | activeJan2018 == 1 | activeJan2019 == 1 | activeJan2020 == 1 | activeJan2021 ==1, 1, 0))
-
 stateDF <- data17_21 %>%  group_by(state_code) %>% 
   summarize(closures_n = sum(closure17_21), active_n = sum(active17_21), closures_pct = 100 * (closures_n/active_n)) %>% 
   rename(state = state_code)
