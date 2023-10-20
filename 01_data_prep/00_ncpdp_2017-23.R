@@ -32,8 +32,8 @@ provider_detail_6.1.2 <- paste0(in_dir, "NCPDP_v3.1_Monthly_Master_20230601/mas.
 lines <- readLines(provider_detail_6.1.2, encoding = "latin1")
 
 # Define the start and end positions for each field, from Table 6.1.2 on pg. 39
-start <- c(1, 8, 68, 338, 474, 545, 840, 842, 844, 846, 487)
-end <- c(7, 67, 127, 339, 478, 552, 841, 843, 845, 847, 487)
+start <- c(1, 8, 68, 338, 474, 545, 840, 842, 844, 846, 487, 198, 253, 308, 340)
+end <- c(7, 67, 127, 339, 478, 552, 841, 843, 845, 847, 487, 252, 307, 337, 348)
 
 # Define a function to extract data from a line
 extract_data <- function(line) {
@@ -58,7 +58,15 @@ active2023 <- data.frame(
   type1 = trimws(extracted_data[, 8]),
   type2 = trimws(extracted_data[, 9]),
   type3 = trimws(extracted_data[, 10]),
-  open24hours = trimws(extracted_data[, 11]))
+  open24hours = trimws(extracted_data[, 11]),
+  
+  address_street = trimws(extracted_data[, 12]),
+  address_street2 = trimws(extracted_data[, 13]),
+  address_city = trimws(extracted_data[, 14]),
+  address_state = trimws(extracted_data[, 4]),
+  address_zip = trimws(extracted_data[, 15])
+  
+)
 
 # Drop the top and bottom rows, which are just the copyright info
 active2023 <- active2023[-c(1, nrow(active2023)), ]
@@ -70,46 +78,70 @@ rm(extracted_data)
 
 # OPENINGS BETWEEN 2017 and 2023
 
-openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmarcy_Report_2017-2023.xlsx"), 
+openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmacy_Report_2017-2023.xlsx"), 
                            skip = 4) %>% 
+  
   mutate(open24hours = ifelse(`Sunday 24 Hours` == "Y" & `Monday 24 \r\nHours` == "Y" & `Tuesday 24 \r\nHours` == "Y" & `Wednesday 24 \r\nHours` == "Y" & `Thursday 24 \r\nHours` == "Y" & `Friday 24 Hours` == "Y" & `Saturday 24 \r\nHours` == "Y", 
                               "Y", "N")) %>% 
+  
   select(`Pharmacy NCPDP No`, `Pharmacy Legal Name`, `Pharmacy DBA Name`, 
          `State Physical`, `County Code`,  
          `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
-         `Store Open Date`) %>% 
+         `Store Open Date`, 
+         `Address1 - Physical`, `Address2 - Physical\r\n`, `City Physical`, `State Physical`, `Zip Code \r\nas reported`) %>% 
+  
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
          ncpdp_name = `Pharmacy DBA Name`,
          state_code = `State Physical`,
          county_fips = `County Code`,
          class = `Dispenser Class\r\nCode`,
-         type1 = `Dispenser Type Code`) %>% 
+         type1 = `Dispenser Type Code`,
+         address_street = `Address1 - Physical`, 
+         address_street2 = `Address2 - Physical\r\n`,
+         address_city = `City Physical`,
+         address_state = `State Physical`,
+         address_zip = `Zip Code \r\nas reported`
+         ) %>% 
+  
   mutate(open_date = as.Date(`Store Open Date`, format = "%m/%d/%Y"),
          open_year = as.integer(format(open_date, "%Y"))) %>% 
+  
   select(-`Store Open Date`)
 
 # ------------------------------------------------------------------------------
 
 # CLOSURES OVER TIME, 2017 to 2023
 
-closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmarcy_Report_2017-2023.xlsx"), 
+closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmacy_Report_2017-2023.xlsx"), 
                            skip = 4) %>% 
+  
   mutate(open24hours = ifelse(`Sunday 24 Hours` == "Y" & `Monday 24 \r\nHours` == "Y" & `Tuesday 24 \r\nHours` == "Y" & `Wednesday 24 \r\nHours` == "Y" & `Thursday 24 \r\nHours` == "Y" & `Friday 24 Hours` == "Y" & `Saturday 24 \r\nHours` == "Y", 
                               "Y", "N")) %>% 
+  
   select(`Pharmacy NCPDP No`, `Pharmacy Legal Name`, `Pharmacy DBA Name`, 
          `State Physical`, `County Code`,  
          `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
+         `Address1 - Physical`, `Address2 - Physical\r\n`, `City Physical`, `State Physical`, `Zip Code \r\nas reported`,
          `Store Close Date`) %>% 
+  
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
          ncpdp_name = `Pharmacy DBA Name`,
          state_code = `State Physical`,
          county_fips = `County Code`,
          class = `Dispenser Class\r\nCode`,
-         type1 = `Dispenser Type Code`) %>% 
+         type1 = `Dispenser Type Code`, 
+         address_street = `Address1 - Physical`, 
+         address_street2 = `Address2 - Physical\r\n`,
+         address_city = `City Physical`,
+         address_state = `State Physical`,
+         address_zip = `Zip Code \r\nas reported`
+  ) %>% 
+  
   mutate(closure_date = as.Date(`Store Close Date`, format = "%m/%d/%Y"),
          closure_year = as.integer(format(closure_date, "%Y"))) %>% 
+  
   select(-`Store Close Date`)
 
 # ------------------------------------------------------------------------------
