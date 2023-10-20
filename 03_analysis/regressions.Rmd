@@ -19,6 +19,18 @@ data_dir <- paste0(dir, "00_data/processed/")
 
 df <- readRDS(paste0(data_dir, "merged_data_long_lagged.rds"))
 
+# Set up data frame for forest plot
+
+forest_plotDF <- data.frame(
+  
+  Variable = as.character(),
+  Model = as.character(),
+  Metric = as.character(),
+  Estimate = as.numeric(),
+  Lower_95 = as.numeric(),
+  Upper_95 = as.numeric()
+  
+)
 ```
 
 ### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year [economic variable is lagged by 1 year]
@@ -36,6 +48,11 @@ or_ci <- exp(confint(m2.or)["unemployment_pct", ])
 ```
 
 ```{r, echo = F, warning = F, message = F}
+# Forest plot table
+plotDF_row1 <- c("Unemployment proportion", "GLM", "Risk Ratio", rr, rr_ci)
+plotDF_row2 <- c("Unemployment proportion", "GLM", "Odds Ratio", or, or_ci)
+forest_plotDF <- rbind(forest_plotDF, plotDF_row1, plotDF_row2)
+
 # Table
 table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
 colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
@@ -44,10 +61,9 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 ```
 
    
-
 ### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... getting some convergence errors
 
-```{r, echo = T}
+```{r, echo = T, eval = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
 beta1hat <- fixef(m1.rr)[[2]]
@@ -61,9 +77,16 @@ beta1hat <- fixef(m2.or)[[2]]
 or <- exp(beta1hat)
 se <- summary(m2.or)$coef[, 2, drop = FALSE]["unemployment_pct", ] 
 or_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
+
+# NOTE -- THIS CODE IS SUPER SLOW, EACH REGRESSION TAKES AROUND 15-20 MIN.... see if there's a way to speed up??
 ```
 
 ```{r, echo = F, warning = F, message = F}
+# Forest plot table
+plotDF_row1 <- c("Unemployment proportion", "GLMER", "Risk Ratio", rr, rr_ci)
+plotDF_row2 <- c("Unemployment proportion", "GLMER", "Odds Ratio", or, or_ci)
+forest_plotDF <- rbind(forest_plotDF, plotDF_row1, plotDF_row2)
+
 # Table
 table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
 colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
@@ -90,6 +113,11 @@ or_ci <- exp(confint(m2.or)["labor_force", ])
 ```
 
 ```{r, echo = F, warning = F, message = F}
+# Forest plot table
+plotDF_row1 <- c("Labor force", "GLM", "Risk Ratio", rr, rr_ci)
+plotDF_row2 <- c("Labor force", "GLM", "Odds Ratio", or, or_ci)
+forest_plotDF <- rbind(forest_plotDF, plotDF_row1, plotDF_row2)
+
 # Table
 table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
 colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
@@ -97,12 +125,10 @@ rownames(table) = c("Risk Ratio", "Odds Ratio")
 kable(table, digits = 2)  %>% kable_styling(full_width = F)
 ```
 
-  
-  
 
-### Risk of pharmacy closures on ln(labor force), with a fixed effect for year and random effect for county [economic variable is lagged by 1 year]
+### Risk of pharmacy closures on labor force, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... not run due to convergence errors!
 
-```{r, echo = T}
+```{r, echo = F, warning = F, message = F, eval = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glmer(Closure ~ labor_force + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
 beta1hat <- fixef(m1.rr)[[2]]
@@ -119,7 +145,12 @@ or_ci <- c(exp(beta1hat - qnorm(0.975)*se), exp(beta1hat + qnorm(0.975)*se))
 ```
 
 
-```{r, echo = F, warning = F, message = F}
+```{r, echo = F, warning = F, message = F, eval = F}
+# Forest plot table
+plotDF_row1 <- c("Labor force", "GLMER", "Risk Ratio", rr, rr_ci)
+plotDF_row2 <- c("Labor force", "GLMER", "Odds Ratio", or, or_ci)
+forest_plotDF <- rbind(forest_plotDF, plotDF_row1, plotDF_row2)
+
 # Table
 table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
 colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
@@ -131,7 +162,25 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 
 ### Forest plot
 
-```{r}
+```{r, echo = F, warning = F, message = F}
+
+forest_plotDF <- forest_plotDF %>% 
+  
+  rename(Variable = 1,
+         Model = 2, 
+         Metric = 3) 
+
+forest_plotDF$Estimate <-  as.numeric(forest_plotDF[, 4])
+forest_plotDF$Lower_95 <-  as.numeric(forest_plotDF[, 5])
+forest_plotDF$Upper_95 <-  as.numeric(forest_plotDF[, 6])
+  
+ggplot(data = forest_plotDF) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_segment(aes(xmin = Lower_95, xmax = Upper_95, y = 1, yend = y)) +
+  geom_point(aes(x = Estimate, y = 1), size = 3) +
+  xlab("Estimate") +
+  theme_classic()
+
 
 ```
 

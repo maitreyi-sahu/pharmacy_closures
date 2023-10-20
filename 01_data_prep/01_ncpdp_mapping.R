@@ -2,6 +2,8 @@
 # MSahu
 # Oct 19, 2023
 
+## Expected time to run: 43 hours!!
+
 # ------------------------------------------------------------------------------
 
 # Setup
@@ -25,11 +27,6 @@ ncpdp <- ncpdp %>%
   mutate(address = paste0(address_street, ", ", address_city, ", ", address_state, ", ", address_zip5)) %>% 
   
   select(-c(address_street, address_street2, address_city, address_state, address_zip, address_zip5)) %>% 
-
-# TEST THIS CODE USING JUST A FEW PHARMACIES
-
-  head(20)
-
 
 # The iteration in furrr requires a list 
 
