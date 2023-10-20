@@ -63,7 +63,7 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
    
 ### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... getting some convergence errors
 
-```{r, echo = T, eval = F}
+```{r, echo = T}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
 beta1hat <- fixef(m1.rr)[[2]]
@@ -164,6 +164,7 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 
 ```{r, echo = F, warning = F, message = F}
 
+# reformat data
 forest_plotDF <- forest_plotDF %>% 
   
   rename(Variable = 1,
@@ -174,12 +175,20 @@ forest_plotDF$Estimate <-  as.numeric(forest_plotDF[, 4])
 forest_plotDF$Lower_95 <-  as.numeric(forest_plotDF[, 5])
 forest_plotDF$Upper_95 <-  as.numeric(forest_plotDF[, 6])
   
-ggplot(data = forest_plotDF) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_segment(aes(xmin = Lower_95, xmax = Upper_95, y = 1, yend = y)) +
-  geom_point(aes(x = Estimate, y = 1), size = 3) +
-  xlab("Estimate") +
-  theme_classic()
+forest_plotDF <- forest_plotDF %>% select(-c(4:6))
+
+# plot
+ggplot(data = forest_plotDF, aes(group = "Variable")) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  geom_point(aes(x = Estimate, y = as.factor(Variable)), size = 3) +
+  geom_segment(aes(x = Lower_95, xend = Upper_95, y = as.factor(Variable), 
+                   yend = as.factor(Variable)), 
+               size = 1.5) +
+  xlab("Estimate") + 
+  #xlim(0.8, 1.2) +
+  ylab("") +
+  theme_classic() +
+  facet_wrap(~Metric) 
 
 
 ```
