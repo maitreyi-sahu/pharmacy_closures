@@ -17,9 +17,11 @@
 rm(list=ls())
 pacman::p_load(dplyr, readxl)
 
-dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/"
-in_dir <- paste0(dir, "raw/NCPDP_Univ of Utah/")
-out_dir <- paste0(dir, "processed/NCPDP/")
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
+in_dir <- paste0(dir, "00_data/raw/NCPDP_Univ of Utah/")
+out_dir <- paste0(dir, "00_data/processed/NCPDP/")
+
+source(paste0(dir, "01_code/01_data_prep/functions.R"))
 
 # ------------------------------------------------------------------------------
 
@@ -206,25 +208,67 @@ combined_pharmacies <- combined_pharmacies %>%
 
 combined_pharmacies <- combined_pharmacies %>% 
   
-  mutate(active2017jan = ifelse(is.na(open_year) | open_year < 2017, 1, 0),
-         active2018jan = ifelse((is.na(open_year) | open_year < 2018) & !closure_year %in% 2017, 1, 0),
-         active2019jan = ifelse((is.na(open_year) | open_year < 2019) & !closure_year %in% 2017:2018, 1, 0),
-         active2020jan = ifelse((is.na(open_year) | open_year < 2020) & !closure_year %in% 2017:2019, 1, 0),
-         active2021jan = ifelse((is.na(open_year) | open_year < 2021) & !closure_year %in% 2017:2020, 1, 0))
-
+        # Active pharmacies for that year
+  
+  mutate(activeJan2017 = ifelse(is.na(open_year) | open_year < 2017, 1, 0),
+         activeJan2018 = ifelse((is.na(open_year) | open_year < 2018) & !closure_year %in% 2017, 1, 0),
+         activeJan2019 = ifelse((is.na(open_year) | open_year < 2019) & !closure_year %in% 2017:2018, 1, 0),
+         activeJan2020 = ifelse((is.na(open_year) | open_year < 2020) & !closure_year %in% 2017:2019, 1, 0),
+         activeJan2021 = ifelse((is.na(open_year) | open_year < 2021) & !closure_year %in% 2017:2020, 1, 0),
+  
+          # Closures for each year and the full time period
+         
+         closure = ifelse(is.na(closure_date), 0, 1),
+         closure17_21 = ifelse(!is.na(closure_date) & closure_year %in% 2017:2021, 1, 0),
+         
+         # Closures for each year, coded as follows:
+         #        1 if it closed that year
+         #        0 if it was active in jan and did not close that year
+         #        NA if it was not active that year
+         
+         closure2017 = case_when(closure_year == 2017 ~ 1,
+                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2017) ~ 0,
+                               activeJan2017 == 0 ~ NA),
+         
+         closure2018 = case_when(closure_year == 2018 ~ 1,
+                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2018) ~ 0,
+                               activeJan2017 == 0 ~ NA),
+ 
+         closure2019 = case_when(closure_year == 2019 ~ 1,
+                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2019) ~ 0,
+                               activeJan2017 == 0 ~ NA),    
+         
+         closure2020 = case_when(closure_year == 2020 ~ 1,
+                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2020) ~ 0,
+                               activeJan2017 == 0 ~ NA),
+         
+         closure2021 = case_when(closure_year == 2021 ~ 1,
+                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2021) ~ 0,
+                               activeJan2017 == 0 ~ NA))
+         
 # ------------------------------------------------------------------------------
 
 # Filter to only 50 states
 
-postal_codes_50_states <- c(
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
-)
-
 combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_codes_50_states)
+
+# ------------------------------------------------------------------------------
+
+# Create long version
+
+combined_pharmacies_long <- combined_pharmacies %>% 
+  
+  select(ncpdp_id, legal_name, ncpdp_name, 
+         state_code, county_fips, 
+         classR, 
+         closure2017, closure2018, closure2019, closure2020, closure2021) %>% 
+  
+  tidyr::pivot_longer(cols = starts_with("closure"),
+                      names_to = "Year",
+                      values_to = "Closure",
+                      names_prefix = "closure") %>% 
+  
+  mutate(Year = as.integer(Year))
 
 # ------------------------------------------------------------------------------
 
@@ -232,3 +276,6 @@ combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_co
 
 saveRDS(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.rds"))
 write.csv(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)
+
+saveRDS(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long.rds"))
+write.csv(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long.csv"), row.names = F)

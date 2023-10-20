@@ -1,6 +1,104 @@
 ---
-title: "2_BLS_2016-21_descriptives"
+title: "BLS descriptives for 2016-2021"
 author: "Maitreyi Sahu"
 date: "2023-10-19"
 output: html_document
 ---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
+               usmap, RColorBrewer, wesanderson, viridis)
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/processed/"
+bls_dir <- paste0(dir, "BLS_LAU/")
+
+bls16_21 <- readRDS(paste0(bls_dir, "bls_cleaned.rds"))  %>% 
+  mutate(`Labor force` = labor_force,
+         `Unemployment percent` = unemployment_pct,
+         State = state_code)
+```
+
+## Summary of BLS statistics by year, across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+bls16_21 %>% tbl_summary(include = c(`Labor force`, `Unemployment percent`), by = Year)
+
+```
+
+## Summary of BLS statistics by state, across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+bls16_21 %>% tbl_summary(include = c(`Labor force`, `Unemployment percent`), by = State)
+
+```
+
+
+## County map of unemployment, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- bls16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Unemployment percent") + 
+  labs(title = "Unemployment by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no BLS data in 2016]")) + 
+  scale_fill_viridis(name = "Unemployment percent", label = scales::comma, limits = c(0, 25), direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of unemployment, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- bls16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Unemployment percent") + 
+  labs(title = "Unemployment by US county, 2021",
+       subtitle = paste0("[Note: gray counties had no BLS data in 2021]")) + 
+  scale_fill_viridis(name = "Unemployment percent", label = scales::comma, limits = c(0, 25), direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of labor force, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- bls16_21 %>%  filter(Year == 2016) %>% 
+  mutate(`Labor force (natural log)` =  log(labor_force)) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Labor force (natural log)") + 
+  labs(title = "Labor force size by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no BLS data in 2016]")) + 
+  scale_fill_viridis(name = "Labor force (natural log)", label = scales::comma) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of labor force, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- bls16_21 %>%  filter(Year == 2021) %>% 
+  mutate(`Labor force (natural log)` =  log(labor_force)) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Labor force (natural log)") + 
+  labs(title = "Labor force size by US county, 2021",
+       subtitle = paste0("[Note: gray counties had no BLS data in 2021]")) + 
+  scale_fill_viridis(name = "Labor force (natural log)", label = scales::comma) +  
+  theme(legend.position = "right")
+
+```

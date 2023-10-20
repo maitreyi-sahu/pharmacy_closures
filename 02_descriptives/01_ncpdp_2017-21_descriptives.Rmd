@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Setup
 rm(list=ls())
 pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
-               usmap, RColorBrewer, wesanderson)
+               usmap, RColorBrewer, wesanderson, viridis)
 
 # Word doc options 
 # theme_gtsummary_printer(
@@ -35,9 +35,7 @@ data17_21 <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>%
   filter(is.na(closure_year) | closure_year < 2022) %>% 
   
   # Clean vars
-  mutate(closure = ifelse(is.na(closure_date), 0, 1),
-         closure17_21 = ifelse(!is.na(closure_date) & closure_year %in% 2017:2021, 1, 0),
-         "Pharmacy Closures" = closure17_21,
+  mutate("Pharmacy Closures" = closure17_21,
          "Year of Closure" = ifelse(closure17_21 ==1, closure_year, NA),
          "Pharmacy Type" = classR,
          `Chain Name` = chain_name,
@@ -73,11 +71,11 @@ data17_21 %>% tbl_cross(row = `Pharmacy Type`,
 
 data17_21 <- data17_21 %>% 
   group_by(classR) %>% 
-  mutate(total2017jan = sum(active2017jan),
-         total2018jan = sum(active2018jan),
-         total2019jan = sum(active2019jan),
-         total2020jan = sum(active2020jan),
-         total2021jan = sum(active2021jan),
+  mutate(total2017jan = sum(activeJan2017),
+         total2018jan = sum(activeJan2018),
+         total2019jan = sum(activeJan2019),
+         total2020jan = sum(activeJan2020),
+         total2021jan = sum(activeJan2021),
          closure_denominator = case_when(
            closure_year == 2017 ~ total2017jan,
            closure_year == 2018 ~ total2018jan,
@@ -160,7 +158,7 @@ ggplot(data = df, aes(x = type1, y = closure17_21, fill = type1)) +
 ## Figure: Number of pharmacy closures by state, 2017-2021
 
 ```{r, echo = F, warning = F}
-data17_21 <-  data17_21 %>%  mutate(active17_21 = ifelse(active2017jan ==1 | active2018jan == 1 | active2019jan == 1 | active2020jan == 1 | active2021jan ==1, 1, 0))
+data17_21 <-  data17_21 %>%  mutate(active17_21 = ifelse(activeJan2017 ==1 | activeJan2018 == 1 | activeJan2019 == 1 | activeJan2020 == 1 | activeJan2021 ==1, 1, 0))
 
 stateDF <- data17_21 %>%  group_by(state_code) %>% 
   summarize(closures_n = sum(closure17_21), active_n = sum(active17_21), closures_pct = 100 * (closures_n/active_n)) %>% 
@@ -169,7 +167,7 @@ stateDF <- data17_21 %>%  group_by(state_code) %>%
 plot_usmap(data = stateDF, regions = "states", values = "closures_n") + 
   labs(title = "Pharmacy closures by US state (N)",
        subtitle = dataset_name) + 
-  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
+  scale_fill_viridis(name = "Closures (n)", label = scales::comma, direction = -1) + 
   theme(legend.position = "right")  
 ```
 
@@ -179,7 +177,7 @@ plot_usmap(data = stateDF, regions = "states", values = "closures_n") +
 plot_usmap(data = stateDF, regions = "states", values = "closures_pct") + 
   labs(title = "Pharmacy closures by US state (%)",
        subtitle = dataset_name) + 
-  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (%)", label = scales::comma) + 
+    scale_fill_viridis(name = "Closures (%)", label = scales::comma, direction = -1) + 
   theme(legend.position = "right")  
 ```
 
@@ -193,7 +191,7 @@ countyDF <- data17_21 %>%  group_by(county_fips) %>%
 plot_usmap(data = countyDF, regions = "counties", values = "closures_n") + 
   labs(title = "Pharmacy closures by US county (N)",
        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
-  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (n)", label = scales::comma) + 
+    scale_fill_viridis(name = "Closures (n)",  label = scales::comma, direction = -1) + 
   theme(legend.position = "right")  
 ```
 
@@ -203,6 +201,6 @@ plot_usmap(data = countyDF, regions = "counties", values = "closures_n") +
 plot_usmap(data = countyDF, regions = "counties", values = "closures_pct") + 
   labs(title = "Pharmacy closures by US county (%)",
        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
-  scale_fill_gradientn(colours = c("white","red3"), name = "Closures (%)", label = scales::comma) + 
+  scale_fill_viridis(name = "Closures (%)",  label = scales::comma, direction = -1) + 
   theme(legend.position = "right")  
 ```
