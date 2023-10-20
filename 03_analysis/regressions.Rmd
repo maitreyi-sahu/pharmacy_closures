@@ -1,5 +1,5 @@
 ---
-title: "Regressions"
+title: "Associations between pharmacy closures and county economic indicators"
 author: "Maitreyi Sahu"
 date: "2023-10-20"
 output: html_document
@@ -10,6 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 rm(list=ls())
 
+pacman::p_load(dplyr, ggplot2, 
+               lme4, # hierarchical model
+               kableExtra, texreg)
+
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 data_dir <- paste0(dir, "00_data/processed/")
 
@@ -17,15 +21,70 @@ df <- readRDS(paste0(data_dir, "merged_data_long_lagged.rds"))
 
 ```
 
-# Regressions of economic variables on closures
+### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year [economic variable is lagged by 1 year]
+
+```{r, echo = T}
+# RISK RATIO using log-binomial regression, and 95% CI
+m1.rr <- glm(Closure ~ unemployment_pct + as.factor(Year), data = df, family = binomial(link = "log"))
+rr <- exp(coef(m1.rr)[[2]])
+rr_ci <- exp(confint(m1.rr)["unemployment_pct", ])
+
+# ODDS RATIO using logistic regression, and 95% CI
+m2.or <- glm(Closure ~ unemployment_pct + as.factor(Year), data = df, family = binomial(link = "logit"))
+or <- exp(coef(m2.or)[[2]])
+or_ci <- exp(confint(m2.or)["unemployment_pct", ])
+```
+
+```{r, echo = F, warning = F, message = F}
+# Table
+table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
+colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
+rownames(table) = c("Risk Ratio", "Odds Ratio")
+kable(table, digits = 2)  %>% kable_styling(full_width = F)
+```
+
+   
+
+### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... getting some convergence errors
+
+```{r, echo = T}
+# RISK RATIO using log-binomial regression, and 95% CI
+m1.rr <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
+beta1hat <- fixef(m1.rr)[[2]]
+rr <- exp(beta1hat)
+se <- summary(m1.rr)$coef[, 2, drop = FALSE]["unemployment_pct", ] 
+rr_ci <- exp(beta1hat - qnorm(0.975)*se, 
+             beta1hat + qnorm(0.975)*se)
+
+# ODDS RATIO using logistic regression, and 95% CI
+m2.or <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "logit"))
+beta1hat <- fixef(m2.or)[[2]]
+rr <- exp(beta1hat)
+se <- summary(m2.or)$coef[, 2, drop = FALSE]["unemployment_pct", ] 
+rr_ci <- exp(beta1hat - qnorm(0.975)*se, 
+             beta1hat + qnorm(0.975)*se)
+```
+
+```{r, echo = F, warning = F, message = F}
+# Table
+table = matrix(c(rr, rr_ci, or, or_ci), byrow = T, ncol = 3)
+colnames(table) = c("Estimate", "95% CI: Lower", "95% CI: Upper")
+rownames(table) = c("Risk Ratio", "Odds Ratio")
+kable(table, digits = 2)  %>% kable_styling(full_width = F)
+```
+    
+    
+    
+### Risk of pharmacy closures on ln(labor force), with a fixed effect for year and random effect for county [economic variable is lagged by 1 year]
 
 ```{r, echo = F, warning = F, message = F}
 
-
-
 ```
 
-# Forest plot
+  
+  
+
+### Forest plot
 
 ```{r}
 
