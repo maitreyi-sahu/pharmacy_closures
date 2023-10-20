@@ -1,11 +1,8 @@
-# Merged dataset for regressions
+# Merged dataset for regressions with lagged economic variables
 # MSahu
 
-# This dataset is long on pharmacy and year, with the economic indicators merged
-
-# Then we lag the economic indicators
-
-# Then regress the pharmacy closures on economic indicators
+# This dataset is long on pharmacy and year, with the economic indicators merged;
+# Then we lag the economic indicators by 1 year
 
 # ------------------------------------------------------------------------------
 
@@ -25,6 +22,12 @@ bls_dir <- paste0(data_dir, "BLS_LAU/")
 bls16_21 <- readRDS(paste0(bls_dir, "bls_cleaned.rds"))
 
 # ------------------------------------------------------------------------------
+ 
+# LAG the economic indicators [is there a better way to do this???]
+
+bls16_21 <- bls16_21 %>% mutate(Year = Year + 1)
+
+# ------------------------------------------------------------------------------
 
 # Merge data - long on pharmacy and year
 
@@ -36,5 +39,5 @@ merged_df_long <- ncpdp17_21_long %>%
 
 # Save
 
-saveRDS(merged_df_long, paste0(data_dir, "merged_data_long.rds"))
-write.csv(merged_df_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
+saveRDS(merged_df_long, paste0(data_dir, "merged_data_long_lagged.rds"))
+write.csv(merged_df_long, paste0(data_dir, "merged_data_long_lagged.csv"), row.names = F)
