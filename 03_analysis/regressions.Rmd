@@ -32,10 +32,12 @@ forest_plotDF <- data.frame(
   
 )
 ```
-
+  
+  
+  
 ### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year [economic variable is lagged by 1 year]
 
-```{r, echo = T}
+```{r, echo = T, profile = F, message = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glm(Closure ~ unemployment_pct + as.factor(Year), data = df, family = binomial(link = "log"))
 rr <- exp(coef(m1.rr)[[2]])
@@ -63,7 +65,7 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
    
 ### Risk of pharmacy closures on county-level unemployment, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... getting some convergence errors
 
-```{r, echo = T}
+```{r, echo = T, profile = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glmer(Closure ~ unemployment_pct + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
 beta1hat <- fixef(m1.rr)[[2]]
@@ -100,7 +102,7 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 ### Risk of pharmacy closures on labor force, with a fixed effect for year [economic variable is lagged by 1 year]
 ### Note, probably need to log or normalize this variable
 
-```{r, echo = T}
+```{r, echo = T, profile = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glm(Closure ~ labor_force + as.factor(Year), data = df, family = binomial(link = "log"))
 rr <- exp(coef(m1.rr)[[2]])
@@ -126,9 +128,9 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 ```
 
 
+```{r, echo = F, warning = F, message = F, eval = F}
 ### Risk of pharmacy closures on labor force, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... not run due to convergence errors!
 
-```{r, echo = F, warning = F, message = F, eval = F}
 # RISK RATIO using log-binomial regression, and 95% CI
 m1.rr <- glmer(Closure ~ labor_force + as.factor(Year) + (1|county_fips), data = df, family = binomial(link = "log"))
 beta1hat <- fixef(m1.rr)[[2]]
@@ -160,9 +162,13 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
   
   
 
-### Forest plot
 
-```{r, echo = F, warning = F, message = F}
+
+```{r, echo = F, warning = F, message = F, eval = F}
+
+### FOREST PLOT - UGLY FIRST TRY
+
+## need to create different shape for glm vs glmer and have it be on different level on y axis
 
 # reformat data
 forest_plotDF <- forest_plotDF %>% 
@@ -181,8 +187,7 @@ forest_plotDF <- forest_plotDF %>% select(-c(4:6))
 ggplot(data = forest_plotDF, aes(group = "Variable")) +
   geom_vline(xintercept = 1, linetype = "dashed") +
   geom_point(aes(x = Estimate, y = as.factor(Variable)), size = 3) +
-  geom_segment(aes(x = Lower_95, xend = Upper_95, y = as.factor(Variable), 
-                   yend = as.factor(Variable)), 
+  geom_segment(aes(x = Lower_95, xend = Upper_95, y = as.factor(Variable), yend = as.factor(Variable)), 
                size = 1.5) +
   xlab("Estimate") + 
   #xlim(0.8, 1.2) +

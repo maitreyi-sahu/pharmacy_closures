@@ -53,4 +53,4 @@ address_df_geo <- ncpdp %>%
 # SAVE
 
 write.csv(address_df_geo, paste0(data_dir, "ncpdp_cleaned_with_address.csv"), row.names = F)
-saveRDS(address_df_geo, paste0(dara_dir, "ncpdp_cleaned_with_address.rds"))
+saveRDS(address_df_geo, paste0(data_dir, "ncpdp_cleaned_with_address.rds"))
