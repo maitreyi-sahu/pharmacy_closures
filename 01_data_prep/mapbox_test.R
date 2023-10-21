@@ -7,8 +7,9 @@
 # Setup
 
 rm(list=ls())
-pacman::p_load(dplyr, furrr, progress)
+pacman::p_load(dplyr, furrr)
 library(mapboxapi)
+library(httr)
 
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 data_dir <- paste0(dir, "00_data/processed/NCPDP/")
@@ -32,53 +33,46 @@ ncpdp <- ncpdp %>%
 
 # ------------------------------------------------------------------------------
 
-# Function to geocode a single address
+# Function to get geocode
 
-geocode_address <- function(address, token) {
-  result <- mb_geocode(
-    address,
-    endpoint = "mapbox.places",
-    limit = 1,
-    types = NULL,
-    search_within = NULL,
-    language = NULL,
-    output = "coordinates",
-    access_token = token
+geocode_mapbox <- function(address, mapbox_token) {
+  base_url <- "https://api.mapbox.com/geocoding/v5/mapbox.places/"
+  query <- list(
+    access_token = mapbox_token,
+    types = "address",
+    limit = 1
   )
-  return(result)
+  url <- paste0(base_url, URLencode(address), ".json?")
+  
+  response <- GET(url, query = query)
+  if (http_type(response) == "application/json") {
+    data <- content(response, "parsed")
+    if (length(data$features) > 0) {
+      coords <- data$features[[1]]$geometry$coordinates
+      return(coords)
+    } else {
+      return("Address not found")
+    }
+  } else {
+    return("Failed to retrieve data")
+  }
 }
 
 # ------------------------------------------------------------------------------
 
-# Create list of unique addresses
+# Unique addresses
 
 address_list <- ncpdp$address %>% as.list()
 
 unique_address_list <- unique(address_list) %>% unlist() # Mapbox has a limit of 100,000 requests .. this gets us to 97,379
 
-unique_address_DF <- data.frame(address = unique_address_list) 
+unique_address_DF <- data.frame(address = unique_address_list) %>% 
+  
+  head(5) # test on 5 addresses
 
-# Preparation for parallelization
 
-plan(strategy = "multisession", workers = availableCores() - 1)
+# Get addresses
 
-# Parallelize the geocoding process
-
-unique_address_DF <- unique_address_DF %>%
-  rowwise() %>%
-  mutate(coordinates = future_map(
-    .x = address,
-    .progress = T, # doesn't exactly work as expected
-    .f = geocode_address,
-    token = msahu_token
-  ))
-
-# ------------------------------------------------------------------------------
-
-address_df_geo <- ncpdp %>% left_join(unique_address_DF, by = "address")
-
-# ------------------------------------------------------------------------------
-
-# SAVE
-
-saveRDS(address_df_geo, paste0(data_dir, "ncpdp_cleaned_with_coords.rds"))
+unique_address_DF <- unique_address_DF %>% 
+  rowwise() %>% 
+  mutate(coordinates = geocode_mapbox(address, msahu_token))

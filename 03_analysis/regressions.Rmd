@@ -128,7 +128,7 @@ kable(table, digits = 2)  %>% kable_styling(full_width = F)
 ```
 
 
-```{r, echo = F, warning = F, message = F, eval = F}
+```{r, echo = F, warning = F, message = F, eval = F, profile = F}
 ### Risk of pharmacy closures on labor force, with a fixed effect for year and random effect for county [economic variable is lagged by 1 year] ... not run due to convergence errors!
 
 # RISK RATIO using log-binomial regression, and 95% CI
