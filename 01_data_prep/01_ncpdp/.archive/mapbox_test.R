@@ -16,7 +16,7 @@ data_dir <- paste0(dir, "00_data/processed/NCPDP/")
 
 ncpdp <- readRDS(paste0(data_dir, "ncpdp_cleaned.rds"))
 
-msahu_token <- "pk.eyJ1IjoibWl0YXNhaHUiLCJhIjoiY2xuems2a2N2MHRjazJqcXA3eW82aDJrMSJ9.leG_32BTnCJ2kGP9SH5m3Q"
+msahu_token <- # UPDATE WITH CORRECT TOKEN
 mb_access_token(msahu_token, install = TRUE, overwrite = T)
 
 # ------------------------------------------------------------------------------
