@@ -55,10 +55,13 @@ ncpdp <- ncpdp %>%
     LAT = ifelse(ncpdp_id == "5662312", "41.494530602369615", LAT),
     LONG = ifelse(ncpdp_id == "5662312", "-120.55367284312192", LONG)
     
-    ) 
+    ) %>% 
+  
+arrange(state_code)
 
 # check <- ncpdp %>% filter(is.na(LAT))
 # check <- ncpdp %>% filter(ncpdp_id %in% c("0100052", "5616721", "5627596", "5631898"))
+
 
 # ------------------------------------------------------------------------------
 
@@ -93,7 +96,7 @@ state_map <- function(state_code) {
     
     geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
     
-    geom_point(data = data, aes(x = x, y = y), color = "blue", size = 1) +
+    geom_point(data = data, aes(x = x, y = y), color = "red", size = 1) +
     
     labs(title = paste0(my_state_code)) + 
 
@@ -123,6 +126,43 @@ pdf(paste0(data_dir, "geocoding_cleaning/byState_map_pharmacies_prior_to_cleanin
   }
   
 dev.off()
+
+# ------------------------------------------------------------------------------
+
+# FIX ALASKA [DONE IN QGIS]
+
+# alaska <- read.csv(paste0(data_dir, "ncpdp_cleaned_with_coords.csv")) %>% 
+#   filter(state_code == "AK") 
+# 
+# write.csv(alaska, file = paste0(data_dir, "geocoding_cleaning/ncpdp_cleaned_with_coords_AK_ONLY.csv"), row.names = F)
+# 
+# alaska_updated <- read.csv(paste0(data_dir, "geocoding_cleaning/ncpdp_cleaned_with_coords_AK_ONLY_updated.csv")) %>% 
+#   mutate(LONG = lon, LAT = lat) %>% select(-c("lat", "lon")) %>% 
+#   mutate(ncpdp_id = as.character(ncpdp_id))
+
+alaska_qgis <- st_read(paste0(data_dir, "geocoding_cleaning/qgis_AK.shp")) %>% 
+  separate(latlong, into = c("LAT", "LONG"), sep = ",") %>% 
+  select(-c(result_num, status, formatted_, place_id, location_t)) %>% 
+  st_drop_geometry() %>% 
+  mutate(ncpdp_int = as.integer(ncpdp_id)) %>% 
+  select(ncpdp_int, LONG, LAT) 
+
+alaska_ncpdp <- ncpdp %>% filter(state_code == "AK") %>% select(-c(LAT, LONG)) %>%  
+  mutate(ncpdp_int = as.integer(ncpdp_id)) %>% 
+  left_join(alaska_qgis, by = "ncpdp_int") %>%
+  select(-c(coordinates, ncpdp_int))
+
+# check <- alaska_updated %>% select(ncpdp_id, LAT, LONG) %>% 
+#   left_join(alaska_qgis, by = "ncpdp_id") %>% 
+#   filter(LAT.x != "no_result" & LONG.x!="no_result") %>%  select(ncpdp_id, LAT.x, LAT.y, LONG.x, LONG.y) %>% 
+#   mutate(diff.LAT = as.numeric(LAT.y) - as.numeric(LAT.x), 
+#          diff.LONG = as.numeric(LONG.x) -as.numeric(LONG.y))  # THESE VERSIONS ARE SIMILAR BUT NOT IDENTICAL -- USE QGIS
+
+
+ncpdp <- ncpdp %>% filter(state_code != "AK") %>% select(-coordinates) 
+
+# rbind
+ncpdp <- ncpdp %>% rbind(alaska_ncpdp) %>% arrange(state_code)
 
 # ------------------------------------------------------------------------------
 
@@ -226,8 +266,8 @@ ncpdp <- ncpdp %>%
   
   mutate(
     
-    LAT = ifelse(ncpdp_id == "2815718", "33.62587191011822", LAT),
-    LONG = ifelse(ncpdp_id == "2815718", "-88.45366363366908", LONG)
+    LAT = ifelse(ncpdp_id == "2520179", "33.62587191011822", LAT),
+    LONG = ifelse(ncpdp_id == "2520179", "-88.45366363366908", LONG)
     
   ) 
 
@@ -260,14 +300,3 @@ for(i in 1:length(unique(ncpdp$state_code))){
 }
 
 dev.off()
-
-
-# ALASKA
-
-check <- ncpdp %>%  filter(state_code == "AK")
-
-alaska <- read.csv(paste0(data_dir, "ncpdp_cleaned_with_coords.csv")) %>% 
-  filter(state_code == "AK") 
-
-write.csv(alaska, file = paste0(data_dir, "geocoding_cleaning/ncpdp_cleaned_with_coords_AK_ONLY.csv"), row.names = F)
-  
