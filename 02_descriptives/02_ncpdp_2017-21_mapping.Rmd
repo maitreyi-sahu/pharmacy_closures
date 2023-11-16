@@ -284,7 +284,7 @@ ggplot() +
     set_common_theme
 ```
 
-### Pharmacy closures by chain, 2017-21 [chain pharmacies only; variable not clean!]
+### Pharmacy closures by chain, 2017-21 [chain pharmacies only; variable not totally clean]
 
 ```{r, echo = F, warning = F, message = F}
 ncpdp_map <- ncpdp_map %>% mutate(chain_name = ifelse(chain_name == "Publix", "Other", chain_name))
@@ -312,7 +312,7 @@ ggplot() +
     set_common_theme
 ```
 
-### Pharmacy openings by chain, 2017-21 [chain pharmacies only; variable not clean and colors not consistent!]
+### Pharmacy openings by chain, 2017-21 [chain pharmacies only; variable not totally clean]
 
 ```{r, echo = F, warning = F, message = F}
 # Data prep 
