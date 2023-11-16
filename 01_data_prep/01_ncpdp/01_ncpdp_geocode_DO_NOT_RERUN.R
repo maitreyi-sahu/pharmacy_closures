@@ -2,6 +2,9 @@
 # MSahu
 # Oct 19, 2023
 
+# This is only run once because Mapbox only allows 100k requests/month before 
+# applying charges.
+
 # ------------------------------------------------------------------------------
 
 # Setup
@@ -16,7 +19,7 @@ out_dir <- paste0(data_dir, "geocoded_counties/")
 
 ncpdp <- readRDS(paste0(data_dir, "ncpdp_cleaned.rds"))
 
-msahu_token <- "pk.eyJ1IjoibWl0YTkxNDciLCJhIjoiY2xvMDlocG9pMTJrcDJsbGxpYWtyNDUydiJ9.RDhH-obvahJXRIajzMZ9Tg"
+msahu_token <- ""   # update with the correct API token 
 mb_access_token(msahu_token, install = TRUE, overwrite = T)
 
 # ------------------------------------------------------------------------------

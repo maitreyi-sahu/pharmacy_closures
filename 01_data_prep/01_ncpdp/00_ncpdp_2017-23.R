@@ -250,9 +250,25 @@ combined_pharmacies <- combined_pharmacies %>%
          
          active17_21 = ifelse(activeJan2017 ==1 | activeJan2018 == 1 | activeJan2019 == 1 | activeJan2020 == 1 | activeJan2021 ==1, 1, 0),
   
+         # Openings for each year and the full time period
+         
+         opening = ifelse(is.na(open_date), 0, 1), # if date is NA, did not open during 2017-23
+         opening17_21 = ifelse(!is.na(open_date) & open_year %in% 2017:2021, 1, 0),
+
+         
+         opening2017 = ifelse(open_year == 2017, 1, 0),
+         
+         opening2018 = ifelse(open_year == 2018, 1, 0),
+         
+         opening2019 = ifelse(open_year == 2019, 1, 0),
+         
+         opening2020 = ifelse(open_year == 2020, 1, 0),
+         
+         opening2021 = ifelse(open_year == 2021, 1, 0),
+                  
           # Closures for each year and the full time period
          
-         closure = ifelse(is.na(closure_date), 0, 1),
+         closure = ifelse(is.na(closure_date), 0, 1), # if date is NA, did not close during 2017-23
          closure17_21 = ifelse(!is.na(closure_date) & closure_year %in% 2017:2021, 1, 0),
          
          # Closures for each year, coded as follows:
@@ -265,20 +281,20 @@ combined_pharmacies <- combined_pharmacies %>%
                                activeJan2017 == 0 ~ NA),
          
          closure2018 = case_when(closure_year == 2018 ~ 1,
-                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2018) ~ 0,
-                               activeJan2017 == 0 ~ NA),
+                               activeJan2018 == 1 & ( is.na(closure_date) | closure_year != 2018) ~ 0,
+                               activeJan2018 == 0 ~ NA),
  
          closure2019 = case_when(closure_year == 2019 ~ 1,
-                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2019) ~ 0,
-                               activeJan2017 == 0 ~ NA),    
+                               activeJan2019 == 1 & ( is.na(closure_date) | closure_year != 2019) ~ 0,
+                               activeJan2019 == 0 ~ NA),    
          
          closure2020 = case_when(closure_year == 2020 ~ 1,
-                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2020) ~ 0,
-                               activeJan2017 == 0 ~ NA),
+                               activeJan2020 == 1 & ( is.na(closure_date) | closure_year != 2020) ~ 0,
+                               activeJan2020 == 0 ~ NA),
          
          closure2021 = case_when(closure_year == 2021 ~ 1,
-                               activeJan2017 == 1 & ( is.na(closure_date) | closure_year != 2021) ~ 0,
-                               activeJan2017 == 0 ~ NA))
+                               activeJan2021 == 1 & ( is.na(closure_date) | closure_year != 2021) ~ 0,
+                               activeJan2021 == 0 ~ NA))
          
 # ------------------------------------------------------------------------------
 

@@ -1,0 +1,252 @@
+---
+title: "NCPDP Geocoded Maps for 2017-2021"
+author: "Maitreyi Sahu"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
+               sf, usmap, RColorBrewer, wesanderson, viridis)
+
+# Word doc options 
+# theme_gtsummary_printer(
+#   print_engine = "flextable",
+#   set_theme = TRUE
+# )
+# YAML:
+# output: 
+#  word_document:
+#    reference_docx: word_styles.docx
+
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
+data_dir <- paste0(dir, "00_data/processed/NCPDP/")
+
+# Convert to SF
+
+ncpdp <- readRDS(paste0(data_dir, "ncpdp_with_coords_CLEAN.rds"))
+
+ncpdp_sf <- st_as_sf(ncpdp, 
+                     coords = c("LONG", "LAT"), 
+                     crs = 4326)  # tells R that these coords should be interpreted as degrees on a sphere (WGS84)
+
+ncpdp_numeric <- ncpdp %>% mutate(LONG = as.numeric(LONG), LAT = as.numeric(LAT))
+
+ncpdp_map <- usmap_transform(ncpdp_numeric, 
+                             input_names = c("LONG", "LAT"),
+                             output_names = c("x", "y")) 
+
+rm(ncpdp_numeric)
+
+
+# SET UP GRAPHS
+
+state <- us_map(regions = "states") 
+
+size_points = 0.65
+alpha_points = 0.95
+
+# THEME
+
+set_common_theme <- list(
+    
+    theme_void(),
+    
+    theme(legend.position = "bottom",
+        legend.justification = "top",
+        legend.key.height = unit(.75,"cm"),
+        legend.text=element_text(size = 10),
+        plot.caption = element_text(hjust = 0)), 
+     
+    guides(color = guide_legend(override.aes = list(size = 3))))
+```
+
+
+### Pharmacy closures for 2017-2021
+
+```{r, echo = F, warning = F, message = F}
+# Data prep
+data <- ncpdp_map %>% filter(active17_21 == 1) %>% arrange(closure17_21) %>% 
+  
+  mutate(`Closure during\n2017-21?` = factor(ifelse(closure17_21 == 1, "Yes", "No, active during 2017-21\nbut did not close"), levels = c("Yes", "No, active during 2017-21\nbut did not close")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Closure during\n2017-21?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkred", "No, active during 2017-21\nbut did not close" = "lightblue")) +
+  
+    set_common_theme
+```
+
+### Pharmacy closures for 2017
+
+```{r, echo = F, warning = F, message = F}
+# Data prep
+data <- ncpdp_map %>% filter(activeJan2017 == 1) %>% arrange(closure2017) %>% 
+  
+  mutate(`Closure during\n2017?` = factor(ifelse(closure2017 == 1, "Yes", "No, active during 2017\nbut did not close"), levels = c("Yes", "No, active during 2017\nbut did not close")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Closure during\n2017?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkred", "No, active during 2017\nbut did not close" = "lightblue")) +
+  
+    set_common_theme
+```
+
+### Pharmacy closures for 2021
+
+```{r, echo = F, warning = F, message = F}
+# Data prep
+data <- ncpdp_map %>% filter(activeJan2021 == 1) %>% arrange(closure2021) %>% 
+  
+  mutate(`Closure during\n2021?` = factor(ifelse(closure2021 == 1, "Yes", "No, active during 2021\nbut did not close"), levels = c("Yes", "No, active during 2021\nbut did not close")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Closure during\n2021?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkred", "No, active during 2021\nbut did not close" = "lightblue")) +
+    
+   set_common_theme
+```
+
+### Pharmacy openings for 2017-2021
+
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(active17_21 == 1) %>% arrange(opening17_21) %>% 
+  
+  mutate(`Opening during\n2017-21?` = factor(ifelse(opening17_21 == 1, "Yes", "No, active during 2017-21\nbut did not newly open"), levels = c("Yes", "No, active during 2017-21\nbut did not newly open")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Opening during\n2017-21?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkgreen", "No, active during 2017-21\nbut did not newly open" = "lightblue")) +
+  
+    set_common_theme
+```
+
+### Pharmacy openings for 2017
+
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(activeJan2017 == 1 | opening2017 == 1) %>% arrange(desc(activeJan2017)) %>% 
+  
+  mutate(`Opening during\n2017?` = factor(ifelse(activeJan2017 == 0, "Yes", "No, active during 2017\nbut did not newly open"), levels = c("Yes", "No, active during 2017\nbut did not newly open")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Opening during\n2017?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkgreen", "No, active during 2017\nbut did not newly open" = "lightblue")) +
+    
+    set_common_theme
+```
+
+### Pharmacy openings for 2021
+
+```{r, echo = F, warning = F, message = F}
+# Data prep
+data <- ncpdp_map %>% filter(activeJan2021 == 1 | opening2021 == 1) %>% arrange(desc(activeJan2021)) %>% 
+  
+  mutate(`Opening during\n2021?` = factor(ifelse(activeJan2021 == 0, "Yes", "No, active during 2021\nbut did not newly open"), levels = c("Yes", "No, active during 2021\nbut did not newly open")))
+
+# PLOT
+ggplot() +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Opening during\n2021?`), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = c("Yes" = "darkgreen", "No, active during 2021\nbut did not newly open" = "lightblue")) +
+    
+    set_common_theme
+```
+
+### Pharmacy openings and closures for 2017-2021
+
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(closure17_21 == 1 | opening17_21 == 1) %>% 
+  
+  mutate(`Opening or closure during 2017-21?` = factor(case_when(closure17_21 == 0 & opening17_21 == 1 ~ "Opening",
+                                                 closure17_21 == 1 & opening17_21 == 0 ~ "Closure"),
+                                       
+                                       levels = c("Opening", "Closure"))) %>% 
+  arrange(desc(`Opening or closure during 2017-21?`))
+
+# check <- data %>%  filter(closure17_21 == 1 & opening17_21 == 1) -- NO PHARMACIES THAT ARE BOTH
+
+# PLOT
+ggplot() +  ggtitle("This version has the openings layered on top") +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1.2, alpha = .1)+
+  
+    scale_color_manual(values = c("Opening" = "darkgreen", "Closure" = "darkred")) +
+    
+    set_common_theme
+
+# SECOND VERSION WITH CLOSURES ON TOP
+data <- data %>%  arrange(`Opening or closure during 2017-21?`)
+
+ggplot() +  ggtitle("This version has the closures layered on top") +
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1.2, alpha = .1)+
+  
+    scale_color_manual(values = c("Opening" = "darkgreen", "Closure" = "darkred")) +
+    
+    set_common_theme
+```
+
+### Pharmacy closures by type of pharmacy, 2017-21
+
+### Pharmacy openings by type of pharmacy, 2017-21
+
+### Pharmacy chain closures by chain, 2017-21
+
+### Pharmacy chain openings by chain, 2017-21

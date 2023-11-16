@@ -14,9 +14,13 @@ data_dir <- paste0(dir, "00_data/processed/NCPDP/")
 out_dir <- paste0(data_dir, "geocoded_counties/")
 
 # Read NCPDP data with geocoded addresses
-ncpdp <- readRDS(paste0(data_dir, "ncpdp_cleaned_with_coords.rds")) %>% 
+
+ncpdp <- readRDS(paste0(data_dir, "ncpdp_with_coords.rds")) %>% 
   mutate(county_fips = county_fips.x) %>%  select(-county_fips.x, -county_fips.y) %>% 
   select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips, everything())
+
+# NOTE : This file actually has an error in the way that the "active2018" to "active2021" variables are created
+# The correct variables are added back at the end , as well as the variables including openings
 
 # ------------------------------------------------------------------------------
 
@@ -27,10 +31,6 @@ ncpdp <- ncpdp %>%
   mutate(Coordinates = I(coordinates)) %>% 
   mutate(Coordinates = gsub("c\\(|\\)", "", Coordinates)) %>% 
   separate(Coordinates, into = c("LONG", "LAT"), sep = ", ") 
-
-
-# ncpdp <- ncpdp %>%  select(-coordinates)
-# write.csv(ncpdp, file = paste0(data_dir, "ncpdp_cleaned_with_coords.csv"), row.names = F)
 
 # ------------------------------------------------------------------------------
 
@@ -300,3 +300,17 @@ for(i in 1:length(unique(ncpdp$state_code))){
 }
 
 dev.off()
+
+# ------------------------------------------------------------------------------
+
+# Add back the correct cleaned variables
+
+ncpdp_geo_only <- ncpdp %>% select(ncpdp_id, address, LONG, LAT)
+
+ncpdp_updated <- readRDS(paste0(data_dir, "ncpdp_cleaned.rds")) %>% left_join(ncpdp_geo_only, by = "ncpdp_id")
+
+# ------------------------------------------------------------------------------
+
+# SAVE
+
+saveRDS(ncpdp_updated, paste0(data_dir, "ncpdp_with_coords_CLEAN.rds")) 
