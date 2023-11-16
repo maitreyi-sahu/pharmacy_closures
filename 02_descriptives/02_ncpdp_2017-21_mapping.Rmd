@@ -1,5 +1,5 @@
 ---
-title: "NCPDP Geocoded Maps for 2017-2021"
+title: "NCPDP Geocoded Pharmacies for 2017-2021"
 author: "Maitreyi Sahu"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
@@ -200,7 +200,7 @@ ggplot() +
     set_common_theme
 ```
 
-### Pharmacy openings and closures for 2017-2021
+### Pharmacy openings and closures for 2017-2021 (these maps show ONLY the pharmacies that opened/closed during this time)
 
 ```{r, echo = F, warning = F, message = F}
 # Data prep 
@@ -221,7 +221,7 @@ ggplot() +  ggtitle("This version has the openings layered on top") +
     
     geom_point(data = data, 
                
-               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1.2, alpha = .1)+
+               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1, alpha = .2)+
   
     scale_color_manual(values = c("Opening" = "darkgreen", "Closure" = "darkred")) +
     
@@ -236,7 +236,7 @@ ggplot() +  ggtitle("This version has the closures layered on top") +
     
     geom_point(data = data, 
                
-               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1.2, alpha = .1)+
+               aes(x = x, y = y, color = `Opening or closure during 2017-21?`), size = 1, alpha = .2)+
   
     scale_color_manual(values = c("Opening" = "darkgreen", "Closure" = "darkred")) +
     
@@ -245,8 +245,89 @@ ggplot() +  ggtitle("This version has the closures layered on top") +
 
 ### Pharmacy closures by type of pharmacy, 2017-21
 
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(closure17_21 == 1) #%>% arrange(desc(classR))
+
+# PLOT
+ggplot() +  
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = classR), size = size_points, alpha = alpha_points)+
+  
+    scale_color_brewer(palette = "Dark2", name ="") + 
+    
+    set_common_theme
+```
+
+
 ### Pharmacy openings by type of pharmacy, 2017-21
 
-### Pharmacy chain closures by chain, 2017-21
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(opening17_21 == 1) #%>% arrange(desc(classR))
 
-### Pharmacy chain openings by chain, 2017-21
+# PLOT
+ggplot() +  
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = classR), size = size_points, alpha = alpha_points)+
+  
+    scale_color_brewer(palette = "Dark2", name ="") + 
+    
+    set_common_theme
+```
+
+### Pharmacy closures by chain, 2017-21 [chain pharmacies only; variable not clean!]
+
+```{r, echo = F, warning = F, message = F}
+ncpdp_map <- ncpdp_map %>% mutate(chain_name = ifelse(chain_name == "Publix", "Other", chain_name))
+ncpdp_map <- ncpdp_map %>% mutate(chain_name = ifelse(chain_name == "Safeway", "Other", chain_name))
+ncpdp_map <- ncpdp_map %>% mutate(chain_name = ifelse(chain_name == "Kmart", "Other", chain_name))
+
+# Standardize the color palette
+all_levels <- sort(unique(ncpdp_map$chain_name))
+my_palette <- brewer.pal(length(all_levels), "Set3")
+
+# Data prep 
+data <- ncpdp_map %>% filter(closure17_21 == 1 & classR == "Chain" & !is.na(chain_name)) %>% arrange(chain_name)
+
+# PLOT
+ggplot() +  
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = chain_name), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = my_palette, name ="") + 
+    
+    set_common_theme
+```
+
+### Pharmacy openings by chain, 2017-21 [chain pharmacies only; variable not clean and colors not consistent!]
+
+```{r, echo = F, warning = F, message = F}
+# Data prep 
+data <- ncpdp_map %>% filter(opening17_21 == 1 & classR == "Chain") %>% arrange(chain_name)
+
+# PLOT
+ggplot() +  
+    
+    geom_polygon(data = state, aes(x = x, y = y, group = group), fill = NA, color = "black") +
+    
+    geom_point(data = data, 
+               
+               aes(x = x, y = y, color = chain_name), size = size_points, alpha = alpha_points)+
+  
+    scale_color_manual(values = my_palette, name ="") + 
+    
+    set_common_theme
+```
