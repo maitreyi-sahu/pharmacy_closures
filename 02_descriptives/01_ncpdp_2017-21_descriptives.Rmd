@@ -202,3 +202,219 @@ plot_usmap(data = countyDF, regions = "counties", values = "closures_pct") +
   scale_fill_viridis(name = "Closures (%)",  label = scales::comma, direction = -1) + 
   theme(legend.position = "right")  
 ```
+```{r, echo = F, warning = F}
+# summarize data at county level
+total_countyDF <- data17_21 %>%  group_by(county_fips) %>% 
+  summarize(activeJan2017 = sum(activeJan2017), 
+            activeJan2021 = sum(activeJan2021)) %>% 
+  mutate(pharmacyDiff17_21 = activeJan2021 - activeJan2017) %>% 
+  mutate(pharmacyDiff17_21_cat = factor(
+           case_when(pharmacyDiff17_21 > 0 ~ "Increased",
+                     pharmacyDiff17_21 == 0  &! (activeJan2017 == 0 & activeJan2021 == 0) ~ "Stayed the same",
+                     pharmacyDiff17_21 < 0 & pharmacyDiff17_21 > -5 ~ "Decreased by 1-4",
+                     pharmacyDiff17_21 <= -5 & pharmacyDiff17_21 > -10 ~ "Decreased by 5-9",
+                      pharmacyDiff17_21 <= -10 ~ "Decreased by 10+"), 
+           levels = c("Increased", "Stayed the same", "Decreased by 1-4", "Decreased by 5-9", "Decreased by 10+")  )) %>% 
+  mutate(pharmacyDiffPct17_21 = 100*(activeJan2021 - activeJan2017)/activeJan2017) %>% 
+  mutate(pharmacyDiffPct17_21_cat = factor(
+           case_when(pharmacyDiffPct17_21 > 0 ~ "Increased",
+                     pharmacyDiffPct17_21 == 0 ~ "Stayed the same",
+                     pharmacyDiffPct17_21 < 0 & pharmacyDiffPct17_21 > -20 ~ "Decreased by 1-20%",
+                     pharmacyDiffPct17_21 <= -20 & pharmacyDiffPct17_21 >= -50 ~ "Decreased by 21-50%",
+                     pharmacyDiffPct17_21 < -50 ~ "Decreased by >50%"), 
+           levels = c("Increased", "Stayed the same", "Decreased by 1-20%", "Decreased by 21-50%", "Decreased by >50%")  )) %>% 
+  rename(fips = county_fips) %>% filter( fips!= "")
+
+# MAPS OF TOTAL NUMBERS OF PHARMACIES - REMOVE B/C UGLY
+
+# #plot - Jan 2017 [LOG THESE??]
+# plot_usmap(data = total_countyDF, regions = "counties", values = "activeJan2017") + 
+#   labs(title = "Total number of pharmacies by county in January 2017",
+#        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+#   scale_fill_viridis(name = "Total pharmacies, Jan 2017",  label = scales::comma, direction = 1) + 
+#   theme(legend.position = "right")  
+# 
+# #plot - Jan 2021 [LOG THESE??]
+# plot_usmap(data = total_countyDF, regions = "counties", values = "activeJan2021") + 
+#   labs(title = "Total number of pharmacies by county in January 2021",
+#        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+#   scale_fill_viridis(name = "Total pharmacies, Jan 2021",  label = scales::comma, direction = 1) + 
+#   theme(legend.position = "right")  
+```
+
+## Tabulated frequencies for total number of active pharmacies in January 2017 versus January 2021
+
+```{r, echo = F, warning = F, message = F}
+
+# nice variable names
+total_countyDF$`Total pharmacies, Jan 2017 (mean)` = total_countyDF$activeJan2017
+total_countyDF$`Total pharmacies, Jan 2021 (mean)` = total_countyDF$activeJan2021
+total_countyDF$`Difference in pharmacies, Jan 2017 to Jan 2021 (mean)` = total_countyDF$pharmacyDiff17_21
+total_countyDF$`Difference in pharmacies, Jan 2017 to Jan 2021 (frequency)` = total_countyDF$pharmacyDiff17_21_cat
+#total_countyDF$`Percent difference in pharmacies, Jan 2017 to Jan 2021 (mean)` = total_countyDF$pharmacyDiffPct17_21
+total_countyDF$`Percent difference in pharmacies, Jan 2017 to Jan 2021 (frequency)` = total_countyDF$pharmacyDiffPct17_21_cat
+
+# summary table
+total_countyDF %>% select(`Total pharmacies, Jan 2017 (mean)`, 
+                          `Total pharmacies, Jan 2021 (mean)`, 
+                          `Difference in pharmacies, Jan 2017 to Jan 2021 (mean)`,
+                          `Difference in pharmacies, Jan 2017 to Jan 2021 (frequency)`,
+                         # `Percent difference in pharmacies, Jan 2017 to Jan 2021 (mean)`,
+                          `Percent difference in pharmacies, Jan 2017 to Jan 2021 (frequency)`
+                          ) %>%  
+  
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} / {N} ({p}%)"
+    ),
+    missing_text = "No active pharmacies during 2017-21") 
+
+```
+
+## Figure: Change in total pharmacies during 2017-2021
+
+```{r, echo = F, warning = F}
+
+plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiff17_21_cat") + 
+  labs(title = "Difference in total number of pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (N)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+```
+
+## Figure: Percent change in total pharmacies during 2017-2021
+
+```{r, echo = F, warning = F}
+plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiffPct17_21_cat") + 
+  labs(title = "Percent change in total number of pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (%)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+```
+
+
+```{r, echo = F, include = F, warning = F, message = F}
+
+# CREATE DATASET BY TYPE OF PHARMACY (COPIED FROM ABOVE)
+
+# Summarize by type of pharmacy
+total_countyDF_byType <- data17_21 %>%  group_by(county_fips, classR) %>% 
+  summarize(activeJan2017 = sum(activeJan2017), 
+            activeJan2021 = sum(activeJan2021)) %>% 
+  mutate(pharmacyDiff17_21 = activeJan2021 - activeJan2017) %>% 
+  mutate(pharmacyDiff17_21_cat = factor(
+           case_when(pharmacyDiff17_21 > 0 ~ "Increased",
+                     pharmacyDiff17_21 == 0 &! (activeJan2017 == 0 & activeJan2021 == 0) ~ "Stayed the same",
+                     pharmacyDiff17_21 < 0 & pharmacyDiff17_21 > -5 ~ "Decreased by 1-4",
+                     pharmacyDiff17_21 <= -5 & pharmacyDiff17_21 > -10 ~ "Decreased by 5-9",
+                      pharmacyDiff17_21 <= -10 ~ "Decreased by 10+"), 
+           levels = c("Increased", "Stayed the same", "Decreased by 1-4", "Decreased by 5-9", "Decreased by 10+")  )) %>% 
+  mutate(pharmacyDiffPct17_21 = 100*(activeJan2021 - activeJan2017)/activeJan2017) %>% 
+  mutate(pharmacyDiffPct17_21_cat = factor(
+           case_when(pharmacyDiffPct17_21 > 0 ~ "Increased",
+                     pharmacyDiffPct17_21 == 0 ~ "Stayed the same",
+                     pharmacyDiffPct17_21 < 0 & pharmacyDiffPct17_21 > -20 ~ "Decreased by 1-20%",
+                     pharmacyDiffPct17_21 <= -20 & pharmacyDiffPct17_21 >= -50 ~ "Decreased by 21-50%",
+                     pharmacyDiffPct17_21 < -50 ~ "Decreased by >50%"), 
+           levels = c("Increased", "Stayed the same", "Decreased by 1-20%", "Decreased by 21-50%", "Decreased by >50%")  )) %>% 
+  rename(fips = county_fips) %>% filter( fips!= "") %>% 
+  as.data.frame()
+
+```
+
+
+## **Independent pharmacies**: Tabulated frequencies for number of active pharmacies in January 2017 versus January 2021
+
+```{r, echo = F, warning = F, message = F}
+
+indept_countyDF <- total_countyDF_byType %>% filter(classR == "Independent")
+
+# nice variable names
+indept_countyDF$`Independent pharmacies, Jan 2017 (mean)` = indept_countyDF$activeJan2017
+indept_countyDF$`Independent pharmacies, Jan 2021 (mean)` = indept_countyDF$activeJan2021
+indept_countyDF$`Difference in independent pharmacies, Jan 2017 to Jan 2021 (mean)` = indept_countyDF$pharmacyDiff17_21
+indept_countyDF$`Difference in independent pharmacies, Jan 2017 to Jan 2021 (frequency)` = indept_countyDF$pharmacyDiff17_21_cat
+indept_countyDF$`Percent difference in independent pharmacies, Jan 2017 to Jan 2021 (frequency)` = indept_countyDF$pharmacyDiffPct17_21_cat
+
+# summary table
+indept_countyDF %>% 
+  select(`Independent pharmacies, Jan 2017 (mean)`,
+         `Independent pharmacies, Jan 2021 (mean)`, 
+         `Difference in independent pharmacies, Jan 2017 to Jan 2021 (mean)`,
+         `Difference in independent pharmacies, Jan 2017 to Jan 2021 (frequency)`,
+         `Percent difference in independent pharmacies, Jan 2017 to Jan 2021 (frequency)`
+         ) %>%  
+  
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} / {N} ({p}%)"
+    ),
+    missing_text = "No active independent pharmacies during 2017-21") 
+
+```
+
+## Figures: Change in **independent** pharmacies during 2017-2021 
+```{r, echo = F, warning = F}
+
+plot_usmap(data = indept_countyDF, regions = "counties", values = "pharmacyDiff17_21_cat") + 
+  labs(title = "Difference in number of independent pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, "[Note: gray counties had no independent pharmacies]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (N)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+
+plot_usmap(data = indept_countyDF, regions = "counties", values = "pharmacyDiffPct17_21_cat") + 
+  labs(title = "Percent change in independent pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no independent pharmacies]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (%)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+```
+
+## **Chain pharmacies**: Tabulated frequencies for number of active pharmacies in January 2017 versus January 2021
+
+```{r, echo = F, warning = F, message = F}
+
+chain_countyDF <- total_countyDF_byType %>% filter(classR == "Chain")
+
+# nice variable names
+chain_countyDF$`Chain pharmacies, Jan 2017 (mean)` = chain_countyDF$activeJan2017
+chain_countyDF$`Chain pharmacies, Jan 2021 (mean)` = chain_countyDF$activeJan2021
+chain_countyDF$`Difference in chain pharmacies, Jan 2017 to Jan 2021 (mean)` = chain_countyDF$pharmacyDiff17_21
+chain_countyDF$`Difference in chain pharmacies, Jan 2017 to Jan 2021 (frequency)` = chain_countyDF$pharmacyDiff17_21_cat
+chain_countyDF$`Percent difference in chain pharmacies, Jan 2017 to Jan 2021 (frequency)` = chain_countyDF$pharmacyDiffPct17_21_cat
+
+# summary table
+chain_countyDF %>% 
+  select(`Chain pharmacies, Jan 2017 (mean)`,
+         `Chain pharmacies, Jan 2021 (mean)`, 
+         `Difference in chain pharmacies, Jan 2017 to Jan 2021 (mean)`,
+         `Difference in chain pharmacies, Jan 2017 to Jan 2021 (frequency)`,
+         `Percent difference in chain pharmacies, Jan 2017 to Jan 2021 (frequency)`
+         ) %>%  
+  
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} / {N} ({p}%)"
+    ),
+    missing_text = "No active chain pharmacies during 2017-21") 
+
+```
+
+## Figures: Change in **chain** pharmacies during 2017-2021 
+
+```{r, echo = F, warning = F}
+
+plot_usmap(data = chain_countyDF, regions = "counties", values = "pharmacyDiff17_21_cat") + 
+  labs(title = "Difference in number of chain pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no chain pharmacies in 2017-21]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (N)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+
+plot_usmap(data = chain_countyDF, regions = "counties", values = "pharmacyDiffPct17_21_cat") + 
+  labs(title = "Percent change in chain pharmacies by county from January 2017 to January 2021",
+       subtitle = paste0(dataset_name, " [Note: gray counties had no chain pharmacies in 2017-21]")) + 
+  scale_fill_brewer(name = "Difference from\n 2017-21 (%)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
+  theme(legend.position = "right")  
+```
