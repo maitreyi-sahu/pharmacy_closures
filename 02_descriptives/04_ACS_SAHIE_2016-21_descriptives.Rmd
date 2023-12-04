@@ -1,0 +1,104 @@
+---
+title: "SAHIE descriptives for 2016-2021"
+author: "Maitreyi Sahu"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
+               usmap, RColorBrewer, wesanderson, viridis)
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/processed/"
+sahie_dir <- paste0(dir, "ACS_SAHIE/")
+
+sahie16_21 <- readRDS(paste0(sahie_dir, "sahie_cleaned.rds"))  %>% 
+  mutate(`Uninsured total` = pop_uninsured,
+         `Uninsured percent` = pct_uninsured,
+         State = state_name)
+```
+
+## Summary of ACS SAHIE statistics by year, across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+sahie16_21 %>% tbl_summary(include = c(`Uninsured total`, `Uninsured percent`), by = Year)
+
+```
+
+## Summary of ACS SAHIE statistics by state, averaged across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+sahie16_21 %>% tbl_summary(include = c(`Uninsured total`, `Uninsured percent`), by = State)
+
+```
+
+
+## County map of uninsured, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- sahie16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Uninsured percent") + 
+  labs(title = "Uninsured percentage by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no SAHIE data in 2016]")) + 
+  scale_fill_viridis(name = "Uninsured percent", label = scales::comma, limits = c(0, 25), direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of uninsured, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- sahie16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Uninsured percent") + 
+  labs(title = "Uninsured percentage by US county, 2021",
+       subtitle = paste0("[Note: gray counties had no SAHIE data in 2021]")) + 
+  scale_fill_viridis(name = "Uninsured percent", label = scales::comma, limits = c(0, 25), direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of total uninsured, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- sahie16_21 %>%  filter(Year == 2016) %>% 
+  mutate(`Uninsured total (natural log)` =  log(pop_uninsured)) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Uninsured total (natural log)") + 
+  labs(title = "Total uninsured population by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no SAHIE data in 2016]")) + 
+  scale_fill_viridis(name = "Uninsured population\n (natural log)", label = scales::comma, direction = -1, limits = c(0, 14)) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of total uninsured, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- sahie16_21 %>%  filter(Year == 2021) %>% 
+  mutate(`Uninsured total (natural log)` =  log(pop_uninsured)) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Uninsured total (natural log)") + 
+  labs(title = "Total uninsured population by US county, 2021",
+       subtitle = paste0("[Note: gray counties had no SAHIE data in 2021]")) + 
+  scale_fill_viridis(name = "Uninsured population\n (natural log)", label = scales::comma, direction = -1, limits = c(0, 14)) +  
+  theme(legend.position = "right")
+
+```

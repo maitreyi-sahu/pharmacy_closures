@@ -1,7 +1,7 @@
 ---
 title: "BLS descriptives for 2016-2021"
 author: "Maitreyi Sahu"
-date: "2023-10-19"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
 
