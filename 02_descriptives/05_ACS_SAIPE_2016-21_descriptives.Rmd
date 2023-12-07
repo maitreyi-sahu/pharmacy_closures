@@ -1,0 +1,102 @@
+---
+title: "SAIPE descriptives for 2016-2021"
+author: "Maitreyi Sahu"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
+               usmap, RColorBrewer, wesanderson, viridis)
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/processed/"
+saipe_dir <- paste0(dir, "ACS_SAIPe/")
+
+saipe16_21 <- readRDS(paste0(saipe_dir, "saipe_cleaned.rds"))  %>% 
+  mutate(`Percent in poverty` = poverty_pct,
+         `Median household income (nominal USD)` = hh_income_med,
+         `Median household income (2020 USD)` = hh_income_med_2020)
+```
+
+## Summary of ACS SAIPE statistics by year, across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+saipe16_21 %>% tbl_summary(include = c(`Percent in poverty`, `Median household income (2020 USD)`), by = Year)
+
+```
+
+## Summary of ACS SAIPE statistics by state, averaged across US counties
+
+```{r, echo = F, warning = F, message = F}
+
+saipe16_21 %>% tbl_summary(include = c(`Percent in poverty`, `Median household income (2020 USD)`), by = State)
+
+```
+
+
+## County map of poverty, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- saipe16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Percent in poverty") + 
+  labs(title = "Poverty percentage by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no SAIPE data in 2016]")) + 
+  scale_fill_viridis(name = "Poverty percent", label = scales::comma, limits = c(0, 25), direction = 1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of poverty, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- saipe16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Percent in poverty") + 
+  labs(title = "Poverty percentage by US county, 2021",
+       subtitle = paste0("[Note: gray counties had no SAIPE data in 2021]")) + 
+  scale_fill_viridis(name = "Poverty percent", label = scales::comma, limits = c(0, 25), direction = 1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of household income, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- saipe16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Median household income (2020 USD)") + 
+  labs(title = "Median household income by US county, 2016 [in 2020 USD]",
+       subtitle = paste0("[Note: gray counties had no SAIPE data in 2016]")) + 
+  scale_fill_viridis(name = "Median household\nincome\n(2020 USD)", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of household income, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <- saipe16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Median household income (2020 USD)") + 
+  labs(title = "Median household income by US county, 2021 [in 2020 USD]",
+       subtitle = paste0("[Note: gray counties had no SAIPE data in 2021]")) + 
+  scale_fill_viridis(name = "Median household\nincome\n(2020 USD)", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
