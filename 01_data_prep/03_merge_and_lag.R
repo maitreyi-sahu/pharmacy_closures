@@ -32,6 +32,7 @@ bls <- readRDS(paste0(data_dir, "BLS_LAU/bls_cleaned.rds")) %>%
 # variable list
 
 id_vars <- c("ncpdp_id", "legal_name", "ncpdp_name", "state_code", "county_fips")
+ncpdp_vars <- c("active17_21", "opening17_21", "closure17_21", "activeJan", "opening", "closure")
 nolag_covars <- c("pct_urban2010", "tot_land_area2020")
 lag_covars <- c("tot_pop", "pop_density", "tot_mds", "mds_per_10k", 
                 "labor_force", "unemployment_pct", "employment_pct",
@@ -46,23 +47,31 @@ startingDF <- expand.grid(ncpdp_id = ncpdp_wide$ncpdp_id, Year = years)
 merged_long <- startingDF %>% 
   
   left_join(ncpdp_wide %>% select(id_vars), by = "ncpdp_id") %>% 
-  left_join(ncpdp_long, by = c("ncpdp_id", "Year")) %>% 
+  left_join(ncpdp_long %>% select(-legal_name, -ncpdp_name, -state_code, -county_fips), by = c("ncpdp_id", "Year")) %>% 
   left_join(hrsa, by = c("county_fips", "state_code", "Year")) %>% 
   left_join(bls, by = c("county_fips", "state_code", "Year")) %>% 
   left_join(saipe, by = c("county_fips", "state_code","Year")) %>% 
   left_join(sahie, by = c("county_fips", "Year")) %>% 
   
   select(Year, all_of(id_vars), 
-         classR, chain_name, open24hours, active17_21, opening17_21, closure17_21, activeJan, opening, closure,
+         classR, chain_name, open24hours, 
+         all_of(ncpdp_vars), 
          all_of(nolag_covars), all_of(lag_covars))
 
-rm(startingDF, ncpdp_long, hrsa, bls, saipe, sahie)
+rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 
 # ------------------------------------------------------------------------------
- 
-# LAG the economic indicators [is there a better way to do this???]
 
-bls16_21 <- bls16_21 %>% mutate(Year = Year + 1)
+# Aggregate at county level (by independent vs chain), and lag covariates
+
+merged_county_class <- merged_long %>% 
+  group_by(Year, state_code, county_fips, classR) %>% 
+  summarize(across(all_of(lag_covars), mean, na.rm = T),
+            across(all_of(nolag_covars), mean, na.rm = T),
+            across(all_of(ncpdp_vars), sum, na.rm = T),
+            .groups = "drop") %>% 
+  
+
 
 # ------------------------------------------------------------------------------
 
@@ -76,5 +85,5 @@ merged_df_long <- ncpdp17_21_long %>%
 
 # Save
 
-saveRDS(merged_df_long, paste0(data_dir, "merged_data_long_lagged.rds"))
-write.csv(merged_df_long, paste0(data_dir, "merged_data_long_lagged.csv"), row.names = F)
+write.csv(merged_df_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
+write.csv(merged_df_long, paste0(data_dir, "merged_data_county_class.csv"), row.names = F)
