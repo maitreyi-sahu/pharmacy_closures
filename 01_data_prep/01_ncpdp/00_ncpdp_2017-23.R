@@ -343,6 +343,7 @@ combined_pharmacies_long <- startingDF %>%
   
   left_join(combined_pharmacies %>%  
               select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips,
+                     classR, chain_name, open24hours,
                      active17_21, opening17_21, closure17_21), by = "ncpdp_id") %>% 
   
   left_join(active_long, by = c("ncpdp_id", "county_fips", "Year")) %>% 

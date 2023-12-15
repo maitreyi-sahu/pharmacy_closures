@@ -15,11 +15,48 @@ data_dir <- paste0(dir, "00_data/processed/")
 
 source(paste0(dir, "01_code/01_data_prep/functions.R"))
 
-ncpdp_dir <- paste0(data_dir, "NCPDP/")
-ncpdp17_21_long <- readRDS(paste0(ncpdp_dir, "ncpdp_cleaned_long.rds"))   
+pacman::p_load(dplyr, slider)
 
-bls_dir <- paste0(data_dir, "BLS_LAU/")
-bls16_21 <- readRDS(paste0(bls_dir, "bls_cleaned.rds"))
+# ------------------------------------------------------------------------------
+
+# Load data
+
+ncpdp_wide <- readRDS(paste0(data_dir, "NCPDP/ncpdp_cleaned.rds"))
+ncpdp_long <- readRDS(paste0(data_dir, "NCPDP/ncpdp_cleaned_long.rds"))
+hrsa <- readRDS(paste0(data_dir, "HRSA/hrsa_cleaned.rds"))
+saipe <- readRDS(paste0(data_dir, "ACS_SAIPE/saipe_cleaned.rds"))
+sahie <- readRDS(paste0(data_dir, "ACS_SAHIE/sahie_cleaned.rds"))
+bls <- readRDS(paste0(data_dir, "BLS_LAU/bls_cleaned.rds")) %>% 
+  mutate(employment_pct = 100 - unemployment_pct)
+
+# variable list
+
+id_vars <- c("ncpdp_id", "legal_name", "ncpdp_name", "state_code", "county_fips")
+nolag_covars <- c("pct_urban2010", "tot_land_area2020")
+lag_covars <- c("tot_pop", "pop_density", "tot_mds", "mds_per_10k", 
+                "labor_force", "unemployment_pct", "employment_pct",
+                "hh_income_med", "hh_income_med_2020usd", "poverty_pct",
+                "pop_insured", "pop_uninsured", "pct_insured", "pct_uninsured")
+
+# merge 
+
+years <- 2016:2021
+startingDF <- expand.grid(ncpdp_id = ncpdp_wide$ncpdp_id, Year = years)
+
+merged_long <- startingDF %>% 
+  
+  left_join(ncpdp_wide %>% select(id_vars), by = "ncpdp_id") %>% 
+  left_join(ncpdp_long, by = c("ncpdp_id", "Year")) %>% 
+  left_join(hrsa, by = c("county_fips", "state_code", "Year")) %>% 
+  left_join(bls, by = c("county_fips", "state_code", "Year")) %>% 
+  left_join(saipe, by = c("county_fips", "state_code","Year")) %>% 
+  left_join(sahie, by = c("county_fips", "Year")) %>% 
+  
+  select(Year, all_of(id_vars), 
+         classR, chain_name, open24hours, active17_21, opening17_21, closure17_21, activeJan, opening, closure,
+         all_of(nolag_covars), all_of(lag_covars))
+
+rm(startingDF, ncpdp_long, hrsa, bls, saipe, sahie)
 
 # ------------------------------------------------------------------------------
  
