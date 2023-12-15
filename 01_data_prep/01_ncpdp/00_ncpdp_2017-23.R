@@ -306,19 +306,50 @@ combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_co
 
 # Create long version
 
-combined_pharmacies_long <- combined_pharmacies %>% 
-  
-  select(ncpdp_id, legal_name, ncpdp_name, 
-         state_code, county_fips, 
-         classR, 
-         closure2017, closure2018, closure2019, closure2020, closure2021) %>% 
-  
-  tidyr::pivot_longer(cols = starts_with("closure"),
+active_long <- combined_pharmacies %>% 
+  select(ncpdp_id, county_fips, 
+         activeJan2017, activeJan2018, activeJan2019, activeJan2020, activeJan2021) %>% 
+  tidyr::pivot_longer(cols = starts_with("active"),
                       names_to = "Year",
-                      values_to = "Closure",
-                      names_prefix = "closure") %>% 
+                      values_to = "activeJan",
+                      names_prefix = "activeJan") %>% 
   
   mutate(Year = as.integer(Year))
+
+openings_long <- combined_pharmacies %>% 
+  select(ncpdp_id, county_fips, 
+         opening2017, opening2018, opening2019, opening2020, opening2021) %>% 
+  tidyr::pivot_longer(cols = starts_with("opening"),
+                      names_to = "Year",
+                      values_to = "opening",
+                      names_prefix = "opening") %>% 
+  mutate(Year = as.integer(Year))
+
+closures_long <- combined_pharmacies %>% 
+  select(ncpdp_id, county_fips, 
+         closure2017, closure2018, closure2019, closure2020, closure2021) %>% 
+  tidyr::pivot_longer(cols = starts_with("closure"),
+                      names_to = "Year",
+                      values_to = "closure",
+                      names_prefix = "closure") %>% 
+  mutate(Year = as.integer(Year))
+
+# merge
+
+years <- 2017:2021
+startingDF <- expand.grid(ncpdp_id = unique(combined_pharmacies$ncpdp_id), Year = years) 
+
+combined_pharmacies_long <- startingDF %>% 
+  
+  left_join(combined_pharmacies %>%  
+              select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips,
+                     active17_21, opening17_21, closure17_21), by = "ncpdp_id") %>% 
+  
+  left_join(active_long, by = c("ncpdp_id", "county_fips", "Year")) %>% 
+  
+  left_join(openings_long, by = c("ncpdp_id", "county_fips", "Year")) %>% 
+  
+  left_join(closures_long, by = c("ncpdp_id", "county_fips", "Year"))
 
 # ------------------------------------------------------------------------------
 

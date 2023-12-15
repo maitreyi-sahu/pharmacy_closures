@@ -9,7 +9,7 @@
 # Setup
 
 rm(list=ls())
-pacman::p_load(dplyr, readxl, stringr, lubridate)
+pacman::p_load(dplyr, tidyverse, readxl, stringr, lubridate)
 
 setwd("/")
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
@@ -39,7 +39,7 @@ read_saipe <- function(year) {
 # Apply function across all years and bind
 years = 16:21
 saipe_list <- lapply(years, read_saipe)
-saipe16_21 <- bind_rows(saipe_list)
+saipe16_21 <- bind_rows(saipe_list) 
 
 # Clear environment
 rm(saipe_list)
@@ -63,12 +63,12 @@ saipe_cleaned <- saipe16_21 %>%
   mutate(county_fips = paste0(`State FIPS Code`, `County FIPS Code`)) %>% 
   
   # rename vars
-  rename(State = "Postal Code",
+  rename(state_code = "Postal Code",
          poverty_pct = "Poverty Percent, All Ages",
          hh_income_med = "Median Household Income") %>% 
   
   # select vars
-  select(Year, State, Name, county_fips, poverty_pct, hh_income_med)
+  select(Year, state_code, county_fips, Name, poverty_pct, hh_income_med)
   
 #  -----------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ saipe_cleaned <- saipe_cleaned %>%
   
   left_join(yearly_cpi, by = "Year") %>% 
   
-  mutate(hh_income_med_2020 = hh_income_med / adj_factor)
+  mutate(hh_income_med_2020usd = hh_income_med / adj_factor)
 
 #  -----------------------------------------------------------------------------
 
