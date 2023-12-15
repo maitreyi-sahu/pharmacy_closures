@@ -15,7 +15,7 @@ data_dir <- paste0(dir, "00_data/processed/")
 
 source(paste0(dir, "01_code/01_data_prep/functions.R"))
 
-pacman::p_load(dplyr, slider)
+pacman::p_load(dplyr, slider, data.table)
 
 # ------------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ bls <- readRDS(paste0(data_dir, "BLS_LAU/bls_cleaned.rds")) %>%
 # variable list
 
 id_vars <- c("ncpdp_id", "legal_name", "ncpdp_name", "state_code", "county_fips")
-ncpdp_vars <- c("active17_21", "opening17_21", "closure17_21", "activeJan", "opening", "closure")
+ncpdp_vars <- c("activeJan", "opening", "closure")
 nolag_covars <- c("pct_urban2010", "tot_land_area2020")
 lag_covars <- c("tot_pop", "pop_density", "tot_mds", "mds_per_10k", 
                 "labor_force", "unemployment_pct", "employment_pct",
@@ -46,8 +46,8 @@ startingDF <- expand.grid(ncpdp_id = ncpdp_wide$ncpdp_id, Year = years)
 
 merged_long <- startingDF %>% 
   
-  left_join(ncpdp_wide %>% select(id_vars), by = "ncpdp_id") %>% 
-  left_join(ncpdp_long %>% select(-legal_name, -ncpdp_name, -state_code, -county_fips), by = c("ncpdp_id", "Year")) %>% 
+  left_join(ncpdp_wide %>% select(id_vars, classR, chain_name, open24hours, active17_21, opening17_21, closure17_21), by = "ncpdp_id") %>% 
+  left_join(ncpdp_long %>% select(ncpdp_id, Year, ncpdp_vars), by = c("ncpdp_id", "Year")) %>% 
   left_join(hrsa, by = c("county_fips", "state_code", "Year")) %>% 
   left_join(bls, by = c("county_fips", "state_code", "Year")) %>% 
   left_join(saipe, by = c("county_fips", "state_code","Year")) %>% 
@@ -55,35 +55,66 @@ merged_long <- startingDF %>%
   
   select(Year, all_of(id_vars), 
          classR, chain_name, open24hours, 
-         all_of(ncpdp_vars), 
-         all_of(nolag_covars), all_of(lag_covars))
+         active17_21, opening17_21, closure17_21, all_of(ncpdp_vars), 
+         all_of(nolag_covars), all_of(lag_covars)) %>% 
+  
+  setDT()
 
-rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
+#rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 
 # ------------------------------------------------------------------------------
 
-# Aggregate at county level (by independent vs chain), and lag covariates
+# Aggregate at county level 
 
-merged_county_class <- merged_long %>% 
-  group_by(Year, state_code, county_fips, classR) %>% 
-  summarize(across(all_of(lag_covars), mean, na.rm = T),
-            across(all_of(nolag_covars), mean, na.rm = T),
-            across(all_of(ncpdp_vars), sum, na.rm = T),
-            .groups = "drop") %>% 
+# NEED TO DISAGGREGATE BY CHAIN V INDEPENDENT?
+
+ids <- merged_long[, c("state_code", "county_fips")] %>% distinct()
+
+merged_county <- 
+  merged_long[, lapply(.SD, sum), by = .(Year, county_fips), .SDcols = c("active17_21", "opening17_21", "closure17_21", ncpdp_vars)][
+  merged_long[, lapply(.SD, mean), by = .(Year, county_fips), .SDcols = nolag_covars], on = .(Year, county_fips)][
+  merged_long[, lapply(.SD, mean), by = .(Year, county_fips), .SDcols = lag_covars], on = .(Year, county_fips)]
+
+merged_county <- merged_county %>% left_join(ids) %>% select(Year, state_code, county_fips, everything())
   
+# Lag covariates
 
+merged_county_lagged <- merged_county %>%
+  group_by(state_code, county_fips) %>%
+  arrange(Year) %>%
+  mutate(across(all_of(lag_covars), ~lag(.), .names = "{.col}_lag1")) %>%
+  ungroup() %>% 
+  
+  # Restrict to 2016
+  filter(Year %in% 2017:2021)
 
 # ------------------------------------------------------------------------------
 
-# Merge data - long on pharmacy and year
+# Add outcome vars
 
-merged_df_long <- ncpdp17_21_long %>% 
+merged_county_lagged <- merged_county_lagged %>% 
   
-  left_join(bls16_21, by = c("county_fips", "Year", "state_code"))
+  # pharmacies per cap
+  mutate(pharm_per_100k = activeJan/tot_pop * 100000,
+         national_median_pharm_per100k_17 = median(pharm_per_100k[Year == 2017], na.rm = T)) %>% 
+  
+  # raw and percent change from 2017 to 2021
+  group_by(state_code, county_fips) %>%
+  mutate(
+    pharm_chg17_21 = (activeJan[Year == 2021] - activeJan[Year == 2017]),
+    pharm_chg_pct17_21 = (activeJan[Year == 2021] - activeJan[Year == 2017]) / activeJan[Year == 2017] * 100,
+    primary_outcome = ifelse(pharm_chg_pct17_21 < -10 & activeJan < national_median_pharm_per100k_17, 1, 0)) %>% 
+  
+  # select vars
+  
+  select(Year, state_code, county_fips, 
+         primary_outcome, pharm_per_100k, national_median_pharm_per100k_17, pharm_chg17_21, pharm_chg_pct17_21,  active17_21, opening17_21, closure17_21, all_of(ncpdp_vars), 
+         everything()) 
+
 
 # ------------------------------------------------------------------------------
 
 # Save
 
-write.csv(merged_df_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
-write.csv(merged_df_long, paste0(data_dir, "merged_data_county_class.csv"), row.names = F)
+write.csv(merged_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
+write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county.csv"), row.names = F)
