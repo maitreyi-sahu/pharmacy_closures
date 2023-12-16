@@ -304,6 +304,15 @@ combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_co
 
 # ------------------------------------------------------------------------------
 
+# Add missing fips codes 
+
+combined_pharmacies <- combined_pharmacies %>% 
+  
+  mutate(county_fips = ifelse(ncpdp_id == "3732105", "40027", county_fips)) %>% 
+  mutate(county_fips = ifelse(ncpdp_id == "5939597", "48201", county_fips))
+
+# ------------------------------------------------------------------------------
+
 # Create long version
 
 active_long <- combined_pharmacies %>% 

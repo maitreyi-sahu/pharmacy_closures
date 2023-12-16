@@ -60,8 +60,6 @@ merged_long <- startingDF %>%
   
   setDT()
 
-#rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
-
 # ------------------------------------------------------------------------------
 
 # Aggregate at county level 
@@ -105,14 +103,20 @@ merged_county_lagged <- merged_county_lagged %>%
     pharm_chg_pct17_21 = (activeJan[Year == 2021] - activeJan[Year == 2017]) / activeJan[Year == 2017] * 100,
     primary_outcome = ifelse(pharm_chg_pct17_21 < -10 & activeJan < national_median_pharm_per100k_17, 1, 0)) %>% 
   
+  # add county name (available in sahie data)
+  
+  left_join(sahie %>%  select(Year, county_fips, state_name, county_name), by = c("Year", "county_fips")) %>% 
+  
   # select vars
   
-  select(Year, state_code, county_fips, 
+  select(Year, state_code, state_name, county_fips, county_name, 
          primary_outcome, pharm_per_100k, national_median_pharm_per100k_17, pharm_chg17_21, pharm_chg_pct17_21,  active17_21, opening17_21, closure17_21, all_of(ncpdp_vars), 
          everything()) 
 
 
 # ------------------------------------------------------------------------------
+
+rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 
 # Save
 
