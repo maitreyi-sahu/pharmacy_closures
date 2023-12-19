@@ -24,6 +24,7 @@ pacman::p_load(dplyr, slider, data.table)
 ncpdp_wide <- readRDS(paste0(data_dir, "NCPDP/ncpdp_cleaned.rds"))
 ncpdp_long <- readRDS(paste0(data_dir, "NCPDP/ncpdp_cleaned_long.rds"))
 hrsa <- readRDS(paste0(data_dir, "HRSA/hrsa_cleaned.rds"))
+acs <- readRDS(paste0(data_dir, "ACS/pop_acs16_21.rds"))
 saipe <- readRDS(paste0(data_dir, "ACS_SAIPE/saipe_cleaned.rds"))
 sahie <- readRDS(paste0(data_dir, "ACS_SAHIE/sahie_cleaned.rds"))
 bls <- readRDS(paste0(data_dir, "BLS_LAU/bls_cleaned.rds")) %>% 
@@ -39,6 +40,8 @@ lag_covars <- c("tot_pop", "pop_density", "tot_mds", "mds_per_10k",
                 "hh_income_med", "hh_income_med_2020usd", "poverty_pct",
                 "pop_insured", "pop_uninsured", "pct_insured", "pct_uninsured")
 
+# ------------------------------------------------------------------------------
+
 # merge 
 
 years <- 2016:2021
@@ -49,11 +52,17 @@ merged_long <- startingDF %>%
   left_join(ncpdp_wide %>% select(id_vars, classR, chain_name, open24hours, active17_21, opening17_21, closure17_21), by = "ncpdp_id") %>% 
   left_join(ncpdp_long %>% select(ncpdp_id, Year, ncpdp_vars), by = c("ncpdp_id", "Year")) %>% 
   left_join(hrsa, by = c("county_fips", "state_code", "Year")) %>% 
+  left_join(acs, by = c("county_fips", "Year")) %>% 
   left_join(bls, by = c("county_fips", "state_code", "Year")) %>% 
   left_join(saipe, by = c("county_fips", "state_code","Year")) %>% 
   left_join(sahie, by = c("county_fips", "Year")) %>% 
   
-  select(Year, all_of(id_vars), 
+  # Use total pop from ACS [not HRSA]
+  mutate(pop_density = tot_pop_acs / tot_land_area2020,
+         mds_per_10k = 10000 * (tot_mds / tot_pop_acs )) %>% 
+  rename(tot_pop = tot_pop_acs) %>% 
+  
+  select(Year, all_of(id_vars), county_name,
          classR, chain_name, open24hours, 
          active17_21, opening17_21, closure17_21, all_of(ncpdp_vars), 
          all_of(nolag_covars), all_of(lag_covars)) %>% 
@@ -100,7 +109,7 @@ merged_county_lagged <- merged_county_lagged %>%
   group_by(state_code, county_fips) %>%
   mutate(
     pharm_chg17_21 = (activeJan[Year == 2021] - activeJan[Year == 2017]),
-    pharm_chg_pct17_21 = (activeJan[Year == 2021] - activeJan[Year == 2017]) / activeJan[Year == 2017] * 100,
+    pharm_chg_pct17_21 = ifelse(pharm_chg17_21 == 0, 0, (activeJan[Year == 2021] - activeJan[Year == 2017]) / activeJan[Year == 2017] * 100),
     primary_outcome = ifelse(pharm_chg_pct17_21 < -10 & activeJan < national_median_pharm_per100k_17, 1, 0)) %>% 
   
   # add county name (available in sahie data)
@@ -121,4 +130,5 @@ rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 # Save
 
 write.csv(merged_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
-write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county.csv"), row.names = F)
+write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county_updated.csv"), row.names = F)
+saveRDS(merged_county_lagged, paste0(data_dir, "merged_data_county_updated.rds"))

@@ -7,7 +7,7 @@
 # Setup
 
 rm(list=ls())
-pacman::p_load(dplyr, readxl)
+pacman::p_load(tidyverse, readxl)
 
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/raw/HRSA/")
@@ -17,9 +17,8 @@ source(paste0(dir, "01_code/01_data_prep/functions.R"))
 
 # ------------------------------------------------------------------------------
 
-# CENSUS POPULATION AND PHYSICIAN DENSITY
+# PHYSICIAN DENSITY
 # Main variable of interest is “Total Active M.D.s Non-Federal” from Area Health Resources File
-# We also get Census population, 
 # Details are in the "AHRF 2021-2022 Technical Documentation" Excel file
 
 ahrf_RAW <- read.delim(paste0(in_dir, "ahrf2022.asc"), header = F, row.names = NULL)
@@ -80,11 +79,9 @@ hrsa_cleaned <- hrsa16_20 %>%
   select(state_code, county_fips, pct_urban2010, tot_land_area2020) %>% 
   left_join(hrsa_pop_long, by = "county_fips" ) %>% 
   left_join(hrsa_mds_long, by = c("Year", "county_fips")) %>% 
-  mutate(pop_density = tot_pop / tot_land_area2020,
-         mds_per_10k = 10000 * (tot_mds / tot_pop )) %>% 
   select(Year, state_code, county_fips, 
          pct_urban2010, tot_land_area2020, 
-         tot_pop, pop_density, tot_mds, mds_per_10k) 
+         tot_mds) 
 
 # ------------------------------------------------------------------------------
 

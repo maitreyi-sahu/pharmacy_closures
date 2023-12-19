@@ -152,11 +152,15 @@ combined_pharmacies <- plyr::rbind.fill(active2023, openings17_23, closures17_23
   
   # Order by closure and open date, so these are on top
   
-  arrange(desc(closure_date), desc(open_date)) %>% 
+  arrange(desc(closure_date), desc(open_date))
+
+# CHECK that there's no pharmacies that both opened and closed in this period - true
+nrow(combined_pharmacies %>% filter(!is.na(open_year) & !is.na(closure_year)))
   
-  # Select only the top row
+  # Select only the top row. 
+  # NOTE this code only works because there are no 
   
-  group_by(ncpdp_id) %>% slice(1) %>% ungroup() 
+combined_pharmacies <- combined_pharmacies %>% group_by(ncpdp_id) %>% slice(1) %>% ungroup() 
 
 # If needed, can merge back active2023 type2/type3 info - not included for now
 

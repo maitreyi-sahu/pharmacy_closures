@@ -1,32 +1,10 @@
 # ACS census data from 2016 to 2021
 # MSahu
-# November 27, 2023
-
-# TO DO:
-# Extract 2020 data from: https://data.census.gov/table/ACSDP1Y2021.DP03?q=DP03
-# Extract SAHIE data 
+# December 18, 2023
 
 # Note:
-# >75% of counties don't have published ACS data: https://censusreporter.org/topics/health-insurance/ ; 
-# To address this, the Census Bureau conducts the Small Areas Health Insurance Estimates (SAHIE) program. SAHIE is the only source for single-year estimates of health insurance coverage for all US counties
-
-# ------------------------------------------------------------------------------
-
-# NOTES from Kelly of what we want to extract:
-
-# Some of these we may already be planning to pull from other markets, but the ones that initially catch my attention include: 
-# 1 Unemployment (already have this from BLS)
-# 2 Industry 
-# 3 Household Income
-# 4 Health Insurance Coverage 
-
-# From the project summary:
-# 1) Median household income - OK
-# 2) urbanicity - NTO FOUND
-# 3) health insurance coverage - OK
-# 4) poverty status _ OK
-# 5) community demographics - race??
-# 6) physicians per 1,000 residents - HRSA
+# >75% of counties don't have published 1-year ACS data: https://censusreporter.org/topics/health-insurance/ ; 
+# However the 5-year estimates are rolling so can use those 
 
 #-------------------------------------------------------------------------------
 
@@ -44,137 +22,142 @@ source(paste0(dir, "01_code/01_data_prep/functions.R"))
 
 # tidycensus package 
 
-census_api_key("8babc646937002e75e6671479bb31cc2541b988a", install = TRUE)
+census_api_key("8babc646937002e75e6671479bb31cc2541b988a", install = T, overwrite = T)
 
 # -----------------------------------------------------------------------------
 
-# Get ACS data
+# Codebook
 
-# variables of interest and their names
-
-acs_vars <- c(
-  
-  "B01003_001", # TOTAL POPULATION
-  "B19013_001", # MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2021 INFLATION-ADJUSTED DOLLARS)
-  "B01002_001", # MEDIAN AGE BY SEX
-  
- # "B27001_001", # HEALTH INSURANCE COVERAGE STATUS BY SEX BY AGE - total
-  "B17020_001", # POVERTY STATUS IN THE PAST 12 MONTHS BY AGE - total
-  "B99021_001", # ALLOCATION OF RACE - total
-  "B99241_001", # ALLOCATION OF INDUSTRY FOR THE CIVILIAN EMPLOYED POPULATION 16 YEARS AND OVER - total 
-  
-) 
-
-# check availability for all 6 years [NOTE: 2020 DATA NOT AVAILABLE IN TIDYCENSUS -- NEED TO EXTRACT SEPARATELY]
-
-for (m in c(1, 5)) {
-
-  for (y in c(2016, 2017, 2018, 2019, 2021)) {
-    
-    ACS_vars <- load_variables(y, paste0("acs", m)) %>% filter(name %in% acs_vars)
-    
-    if (nrow(ACS_vars) < 6) { print(paste0(y, ": missing variable for ", m, "-year ACS")) 
-      
-      }  else if (nrow(ACS_vars) == 6) { 
-      
-      print(paste0(y, ": all variables present for ", m, "-year ACS"))
-          
-    }
-  }
-}
-
-# all are present!
-
-# GET CODES FOR RACE / INDUSTRY
-
-#codebook
 ACS_vars2021 <- load_variables(2021, paste0("acs", 1)) 
-write.csv(ACS_vars2021, file = paste0(in_dir, "acs_vars_2021.csv"), row.names = F)
+# write.csv(ACS_vars2021, file = paste0(in_dir, "acs_vars_2021.csv"), row.names = F)
+
+industry_labels <- ACS_vars2021 %>% 
+  filter(concept == "INDUSTRY BY OCCUPATION FOR THE CIVILIAN EMPLOYED POPULATION 16 YEARS AND OVER")
+
+# ------------------------------------------------------------------------------
+
+# Variables of interest and their names
+
+# acs_vars <- c(
+#   
+#   "B01003_001", # total population
+#   "B99241_001", # total civilian employed pop 16+
+#   
+#   "B24050_009", # transport
+#   "B24050_002", # agriculture
+#   "B24050_005", # construction
+#   "B24050_006", # manufacturing 
+#   "B24050_020" # education
+# ) 
+# 
+# # check availability for all 6 years [NOTE: 2020 DATA NOT AVAILABLE IN TIDYCENSUS -- NEED TO EXTRACT SEPARATELY]
+# 
+# for (m in c(1, 5)) {
+# 
+#   for (y in c(2016, 2017, 2018, 2019, 2021)) {
+#     
+#     ACS_vars <- load_variables(y, paste0("acs", m)) %>% filter(name %in% acs_vars)
+#     
+#     if (nrow(ACS_vars) < 6) { print(paste0(y, ": missing variable for ", m, "-year ACS")) 
+#       
+#       }  else if (nrow(ACS_vars) == 6) { 
+#       
+#       print(paste0(y, ": all variables present for ", m, "-year ACS"))
+#           
+#     }
+#   }
+# }
+# 
+# # some are missing for 5-year ACS, but not for 1-year --> use 1 year acs
+# 
+# # ------------------------------------------------------------------------------
+# 
+# # CENSUS INDUSTRY VARIABLE - DON'T INCLUDE
+# 
+# #	Transportation and Warehousing, and Utilities
+# #	Agriculture, Forestry, Fishing, and Hunting, and Mining
+# #	Construction
+# #	Manufacturing
+# #	Educational Services, and Health Care and Social Assistance
+# 
+# industry_vars <- c(
+#   
+#   tot_pop = "B01003_001",
+#   tot_working_pop = "B99241_001",  
+#   
+#   transport  = "B24050_009",
+#   agriculture = "B24050_002",
+#   construction = "B24050_005",
+#   manufacturing = "B24050_006",
+#   education = "B24050_020"
+# ) 
+# 
+# industry_acs1year_2021 <- get_acs(
+#   
+#   geography = "county",
+#   # table = "DP03",
+#   # cache_table = TRUE, # makes this run faster the second time around
+#   survey = "acs1",
+#   variables = c(industry_vars),
+#   summary_var = "B01003_001", # Total pop
+#   output = "wide",
+#   year = 2021
+# ) # only has data for 841 counties
+# 
+# 
+# write.csv(industry_acs1year_2021, paste0(out_dir, "industry2021.csv"), row.names = F)
 
 # ------------------------------------------------------------------------------
 
 # The default dataset in get_acs() is the 2015-2019 5-year dataset
 # The 1-year dataset is also available for geographies of population 65,000 and greater, so not good for county-level data
 
-acs_1year <- get_acs(
+extract_pop <- function(year) {
   
-  geography = "county",
- # table = "DP03",
- # cache_table = TRUE, # makes this run faster the second time around
-  survey = "acs1",
-  variables = c(
+  tot_pop <- get_acs(
     
-    hh_income_med = "B19001_001",
-    poverty_status = "B17020_001",
-    health_insurance_pct = "B27001_001",
-    industry_alloc = "B99241_001",
-    race_alloc = "B99021_001",
-    age_med = "B01002_001"
+    geography = "county",
+    survey = "acs5",
+    variables =  c(tot_pop = "B01003_001"),
+    cache_table = TRUE, # makes this run faster the second time around
+    output = "wide",
+    year = year ) %>% 
     
-    ),
-  summary_var = "B01003_001", # Total pop
-  output = "wide",
-  year = 2021
-) # only has data for 841 counties
+    mutate(Year = year)
+  
+  return(tot_pop)
+  
+}
 
-
-
-acs_5year_2021 <- get_acs(
-  geography = "county",
-  variables = c(
-    
-    hh_income_med = "B19001_001",
-    poverty_status = "B17020_001",
-    health_insurance_pct = "B27001_001",
-    industry_alloc = "B99241_001",
-    race_alloc = "B99021_001",
-    age_med = "B01002_001"
-    
-  ),
-  cache_table = TRUE, # makes this run faster the second time around
-  output = "wide",
-  year = 2021
-) # has data for 3221 variables
-
-acs_5year_2020 <- get_acs(
-  geography = "county",
-  variables = c(
-    
-    hh_income_med = "B19001_001",
-    poverty_status = "B17020_001",
-    health_insurance_pct = "B27001_001",
-    industry_alloc = "B99241_001",
-    race_alloc = "B99021_001",
-    age_med = "B01002_001"
-    
-  ),
-  cache_table = TRUE, # makes this run faster the second time around
-  output = "wide",
-  year = 2020
-)
-
-acs_5year_2019 <- get_acs(
-  geography = "county",
-  variables = c(
-    
-    hh_income_med = "B19001_001",
-    poverty_status = "B17020_001",
-    health_insurance_pct = "B27001_001",
-    industry_alloc = "B99241_001",
-    race_alloc = "B99021_001",
-    age_med = "B01002_001"
-    
-  ),
-  cache_table = TRUE, # makes this run faster the second time around
-  output = "wide",
-  year = 2019
-) 
-acs_5year_2019 <- acs_5year_2019 %>% arrange(GEOID)
+years = 2016:2021
+combined_pop <- do.call(rbind, lapply(years, extract_pop)) %>% 
+  rename(county_fips = GEOID, tot_pop_acs = tot_popE) %>% 
+  select(Year, county_fips, tot_pop_acs)
 
 # ------------------------------------------------------------------------------
 
-# For insurance coverage, use SAHIE: https://censusreporter.org/topics/health-insurance/
-# Downloaded from https://www.census.gov/data/datasets/time-series/demo/sahie/estimates-acs.html
+# Manually add population for 2 counties which only have data for 2020 and 2021 using the 2020 population
 
-sahie_dir <- paste0(in_dir, "SAHIE/")
+# County_fips = 
+# https://data.statesmanjournal.com/census/total-population/total-pochange/chugach-census-area-alaska/050-02063/
 
+cid1 =  "02066"
+r10 <- c(Year = 2016, county_fips = cid1, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r1A <- c(Year = 2017, county_fips = cid1, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r1B <- c(Year = 2018, county_fips = cid1, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r1C <- c(Year = 2019, county_fips = cid1, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+
+cid2 =  "02063"
+r20 <- c(Year = 2016, county_fips = cid2, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r2A <- c(Year = 2017, county_fips = cid2, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r2B <- c(Year = 2018, county_fips = cid2, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+r2C <- c(Year = 2019, county_fips = cid2, combined_pop[combined_pop$county_fips == cid1 & combined_pop$Year == 2020, "tot_pop_acs"])
+
+combined_pop <- rbind(combined_pop, r10, r1A, r1B, r1C, r20, r2A, r2B, r2C) %>% arrange(Year, county_fips)
+
+# ------------------------------------------------------------------------------
+
+# SAVE
+
+write.csv(combined_pop, paste0(out_dir, "pop_acs16_21.csv"), row.names = F)
+saveRDS(combined_pop, paste0(out_dir, "pop_acs16_21.rds"))

@@ -1,0 +1,161 @@
+---
+title: "NCPDP descriptives for 2016-2021, in per capita space"
+author: "Maitreyi Sahu"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Setup
+rm(list=ls())
+pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
+               usmap, RColorBrewer, wesanderson, viridis)
+
+# Load and clean data
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/processed/"
+
+hrsa16_21 <- readRDS(paste0(dir, "HRSA/hrsa_cleaned.rds"))  %>% 
+  mutate(`Total population (in mil)` = tot_pop/1e6,
+         `Population per sq. mile` = pop_density,
+         `Percent urban population [2010]` = pct_urban2010,
+         `Total active MDs` = tot_mds,
+         `MDs per 10k population` = mds_per_10k,
+          State = state_code)
+```
+
+## Summary of HRSA/Census statistics by year, across US counties (mean, SD)
+
+```{r, echo = F, warning = F, message = F}
+
+hrsa16_21 %>% 
+  tbl_summary(include = c(`Total population (in mil)`, 
+                          `Population per sq. mile`,
+                          `Total active MDs`,
+                          `MDs per 10k population`
+                          ), 
+              statistic = list(all_continuous() ~ "{mean} ({sd})"),
+              by = Year)
+
+```
+
+## Summary of HRSA/Census statistics by state, averaged across US counties (mean, SD)
+
+```{r, echo = F, warning = F, message = F}
+
+hrsa16_21 %>% 
+  tbl_summary(include = c(`Total population (in mil)`, 
+                          `Population per sq. mile`,
+                          `Total active MDs`,
+                          `MDs per 10k population`
+                          ), 
+              statistic = list(all_continuous() ~ "{mean} ({sd})"),
+              by = State)
+
+
+```
+
+
+## County map of population, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Total population (in mil)") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Total population by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no data in 2016]")) + 
+  scale_fill_viridis(name = "Population (millions)", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of population, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Total population (in mil)") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Total population by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no data in 2016]")) + 
+  scale_fill_viridis(name = "Population (millions)", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+# County map of population density, 2021
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Population per sq. mile") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Population density by US county, 2020",
+       subtitle = paste0("[Note: gray counties had no data in 2020]")) + 
+  scale_fill_viridis(name = "Pop. density per sq. mile", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+# County map of urbanicity, 2010
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2021) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "Percent urban population [2010]") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Urbanicity by US county [2020 Census data]",
+       subtitle = paste0("[Note: gray counties had no data in 2010]")) + 
+  scale_fill_viridis(name = "Percent living in urban areas", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+## County map of physicians per capita, 2016
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2016) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "MDs per 10k population") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Total MDs per capita by US county, 2016",
+       subtitle = paste0("[Note: gray counties had no data in 2016]")) + 
+  scale_fill_viridis(name = "MDs per 10k", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
+
+# County map of physicians per capita, 2020
+
+```{r, echo = F, warning = F, message = F}
+
+countyDF <-  hrsa16_21 %>%  filter(Year == 2020) %>% 
+  rename(fips = county_fips) 
+
+plot_usmap(data = countyDF, regions = "counties", values = "MDs per 10k population") + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .25, color = "black") +
+  labs(title = "Total MDs per capita by US county, 2020",
+       subtitle = paste0("[Note: gray counties had no data in 2020]")) + 
+  scale_fill_viridis(name = "MDs per 10k", label = scales::comma, direction = -1) +  
+  theme(legend.position = "right")
+
+```
