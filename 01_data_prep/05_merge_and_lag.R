@@ -144,6 +144,8 @@ merged_county_lagged <- merged_county_lagged %>%
   # add county name (available in sahie data)
   
   left_join(sahie %>%  select(Year, county_fips, state_name, county_name), by = c("Year", "county_fips")) %>% 
+  select(-"state_name") %>% 
+  left_join(state_names, by = "state_code") %>% 
   
   # select vars
   
@@ -177,5 +179,5 @@ rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 # Save
 
 write.csv(merged_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
-write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v2.csv"), row.names = F)
-saveRDS(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v2.rds"))
+write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v3.csv"), row.names = F)
+saveRDS(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v3.rds"))
