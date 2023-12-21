@@ -97,5 +97,5 @@ saipe_cleaned <- saipe_cleaned %>%
 
 # SAVE
 
-saveRDS(saipe_cleaned, paste0(out_dir, "saipe_cleaned.rds"))
-write.csv(saipe_cleaned, paste0(out_dir, "saipe_cleaned.csv"), row.names = F)
+saveRDS(saipe_cleaned, paste0(out_dir, "saipe_cleaned_with_dc.rds"))
+write.csv(saipe_cleaned, paste0(out_dir, "saipe_cleaned_with_dc.csv"), row.names = F)

@@ -304,7 +304,7 @@ combined_pharmacies <- combined_pharmacies %>%
 
 # Filter to only 50 states
 
-combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_codes_50_states)
+combined_pharmacies <- combined_pharmacies %>%  filter(state_code %in% postal_codes_51_states)
 
 # ------------------------------------------------------------------------------
 
@@ -369,8 +369,8 @@ combined_pharmacies_long <- startingDF %>%
 
 # Save
 
-saveRDS(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.rds"))
-write.csv(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned.csv"), row.names = F)
+saveRDS(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned_with_dc.rds"))
+write.csv(combined_pharmacies, paste0(out_dir, "ncpdp_cleaned_with_dc.csv"), row.names = F)
 
-saveRDS(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long.rds"))
-write.csv(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long.csv"), row.names = F)
+saveRDS(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long_with_dc.rds"))
+write.csv(combined_pharmacies_long, paste0(out_dir, "ncpdp_cleaned_long_with_dc.csv"), row.names = F)

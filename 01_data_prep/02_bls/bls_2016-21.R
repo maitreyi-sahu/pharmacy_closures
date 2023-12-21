@@ -44,7 +44,7 @@ for (i in 16:21) {
     mutate(county_fips = paste0(state_id, county_id),
            Year = as.integer(Year),
            state_code = substr(county_state_name, nchar(county_state_name) - 1, nchar(county_state_name))) %>% # last 2 chars
-    mutate(state_code = ifelse(state_code == "ia", "IA", state_code)) %>%  # clean one weird one
+    mutate(state_code = ifelse(state_code == "ia", "DC", state_code)) %>%  # District of Columbia
     select(county_fips, state_code, Year, labor_force, unemployment_pct)
   
   bls <- rbind(bls, temp)
@@ -55,13 +55,13 @@ rm(temp)
 
 # ------------------------------------------------------------------------------
 
-# Filter to only 50 states
+# Filter to only 51 states
 
-bls <- bls %>%  filter(state_code %in% postal_codes_50_states)
+bls <- bls %>%  filter(state_code %in% postal_codes_51_states)
 
 # ------------------------------------------------------------------------------
 
 # Save
 
-saveRDS(bls, paste0(out_dir, "bls_cleaned.rds"))
-write.csv(bls, paste0(out_dir, "bls_cleaned.csv"), row.names = F)
+saveRDS(bls, paste0(out_dir, "bls_cleaned_with_dc.rds"))
+write.csv(bls, paste0(out_dir, "bls_cleaned_with_dc.csv"), row.names = F)

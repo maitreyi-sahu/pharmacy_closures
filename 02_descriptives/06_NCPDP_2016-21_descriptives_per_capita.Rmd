@@ -1,5 +1,5 @@
 ---
-title: "NCPDP descriptives for 2016-2021, in per capita space"
+title: "NCPDP descriptives for 2017-2021, in per capita"
 author: "Maitreyi Sahu"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
@@ -15,9 +15,10 @@ pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
                usmap, RColorBrewer, wesanderson, viridis)
 
 # Load and clean data
-dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/00_data/processed/"
+dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
+data_dir <- paste0(dir, "00_data/processed/")
 
-hrsa16_21 <- readRDS(paste0(dir, "HRSA/hrsa_cleaned.rds"))  %>% 
+ncpdp16_21 <- readRDS(paste0(data_dir, "merged_data_county_updated.rds"))  %>% 
   mutate(`Total population (in mil)` = tot_pop/1e6,
          `Population per sq. mile` = pop_density,
          `Percent urban population [2010]` = pct_urban2010,
@@ -26,20 +27,6 @@ hrsa16_21 <- readRDS(paste0(dir, "HRSA/hrsa_cleaned.rds"))  %>%
           State = state_code)
 ```
 
-## Summary of HRSA/Census statistics by year, across US counties (mean, SD)
-
-```{r, echo = F, warning = F, message = F}
-
-hrsa16_21 %>% 
-  tbl_summary(include = c(`Total population (in mil)`, 
-                          `Population per sq. mile`,
-                          `Total active MDs`,
-                          `MDs per 10k population`
-                          ), 
-              statistic = list(all_continuous() ~ "{mean} ({sd})"),
-              by = Year)
-
-```
 
 ## Summary of HRSA/Census statistics by state, averaged across US counties (mean, SD)
 
