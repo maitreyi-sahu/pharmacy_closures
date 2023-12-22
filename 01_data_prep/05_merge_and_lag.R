@@ -170,8 +170,7 @@ merged_county_lagged <- merged_county_lagged %>%
          county_fips!="51560", #https://www.cdc.gov/nchs/nvss/bridged_race/county_geography-_changes1990-present.pdf
          !(county_fips=="02261" & Year %in% 2020:2021), #https://www.census.gov/programs-surveys/geography/technical-documentation/county-changes/2010.html
          county_fips!="02001" # not found anywhere
-         )
-
+         ) 
 # ------------------------------------------------------------------------------
 
 rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)

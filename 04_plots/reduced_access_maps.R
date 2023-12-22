@@ -28,10 +28,10 @@ fig2_data <- read.csv(paste0(data_dir, "reduced_access_counties_for_mapping.csv"
 formatPlot <- function(myPlot) {
   myPlot +
     guides(color = guide_legend(override.aes = list(size = 1))) +
-    theme(title = element_text(size = 16),
-          legend.title = element_text(size = 15), 
-          legend.text  = element_text(size = 12),
-          legend.key.size = unit(1, "lines"),
+    theme(title = element_text(size = 24),
+          legend.title = element_text(size = 22), 
+          legend.text  = element_text(size = 20),
+           legend.key.size = unit(3.5, "lines"),
           legend.position = "right")
 }
 
@@ -39,14 +39,15 @@ formatPlot <- function(myPlot) {
 
 # FIG 1 - STATE LEVEL
 
-pdf(paste0(out_dir, "fig1_states_reduced_access.pdf"), height = 10, width = 15)
+pdf(paste0(out_dir, "fig1_states_reduced_access.pdf"), height = 15, width = 25)
 
 formatPlot(
 
   plot_usmap(data = fig1_data, regions = "states", values = "pct_counties_reduced_access") + 
     geom_polygon(data = usmapdata::us_map(regions = "states"),
                  aes(x, y, group = group), fill = NA, size = .25, color = "black") +
-    labs(title = "Percent of counties with reduced access to pharmacies by state, 2017") + 
+    labs(title = "Percent of Counties with Reduced Access to Pharmacies, by State, 2021",
+         subtitle = paste0("")) + 
     scale_fill_distiller(name = "Share of counties \n with reduced access (%)", label = scales::comma, direction = -1, palette = "RdBu") 
 
 )
@@ -57,7 +58,7 @@ dev.off()
 
 # FIG 2 - COUNTY LEVEL
 
-pdf(paste0(out_dir, "fig2_counties_reduced_access.pdf"), height = 10, width = 15)
+pdf(paste0(out_dir, "fig2_counties_reduced_access.pdf"), height = 15, width = 25)
 
 formatPlot(
 
@@ -66,9 +67,9 @@ formatPlot(
                  aes(x, y, group = group), fill = NA, size = .05, color = "grey40") +
     geom_polygon(data = usmapdata::us_map(regions = "states"),
                  aes(x, y, group = group), fill = NA, size = .3, color = "black") +
-    labs(title = "Counties with reduced access to pharmacies in 2017",
-         subtitle = paste0("[Note: gray counties had no data in 2017]")) + 
-    scale_fill_manual(values = c( "#B2182B", "#FDDBC7", "#4393C3"),
+    labs(title = "Counties with Reduced Access to Pharmacies in 2021",
+         subtitle = paste0("")) + 
+    scale_fill_manual(values = c( "#FDDBC7", "#B2182B", "#4393C3"),
                         name = "Pharmacy accessibility") +
     theme(legend.position = "right")
 
