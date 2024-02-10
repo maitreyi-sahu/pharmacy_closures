@@ -32,8 +32,8 @@ provider_detail_6.1.2 <- paste0(in_dir, "NCPDP_v3.1_Monthly_Master_20230601/mas.
 lines <- readLines(provider_detail_6.1.2, encoding = "latin1")
 
 # Define the start and end positions for each field, from Table 6.1.2 on pg. 39
-start <- c(1, 8, 68, 338, 474, 545, 840, 842, 844, 846, 487, 198, 253, 308, 340)
-end <- c(7, 67, 127, 339, 478, 552, 841, 843, 845, 847, 487, 252, 307, 337, 348)
+start <- c(1, 8, 68, 338, 474, 545, 840, 842, 844, 846, 487, 198, 253, 308, 340, 858)
+end <- c(7, 67, 127, 339, 478, 552, 841, 843, 845, 847, 487, 252, 307, 337, 348, 867)
 
 # Define a function to extract data from a line
 extract_data <- function(line) {
@@ -64,8 +64,9 @@ active2023 <- data.frame(
   address_street2 = trimws(extracted_data[, 13]),
   address_city = trimws(extracted_data[, 14]),
   address_state = trimws(extracted_data[, 4]),
-  address_zip = trimws(extracted_data[, 15])
+  address_zip = trimws(extracted_data[, 15]),
   
+  npi =  trimws(extracted_data[, 16])
 )
 
 # Drop the top and bottom rows, which are just the copyright info
@@ -88,7 +89,8 @@ openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmacy_Report_2017-2023.xlsx")
          `State Physical`, `County Code`,  
          `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
          `Store Open Date`, 
-         `Address1 - Physical`, `Address2 - Physical\r\n`, `City Physical`, `State Physical`, `Zip Code \r\nas reported`) %>% 
+         `Address1 - Physical`, `Address2 - Physical\r\n`, `City Physical`, `State Physical`, `Zip Code \r\nas reported`,
+         `NPI Number`) %>% 
   
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
@@ -100,7 +102,8 @@ openings17_23 <- read_xlsx(paste0(in_dir, "Open_Pharmacy_Report_2017-2023.xlsx")
          address_street = `Address1 - Physical`, 
          address_street2 = `Address2 - Physical\r\n`,
          address_city = `City Physical`,
-         address_zip = `Zip Code \r\nas reported`
+         address_zip = `Zip Code \r\nas reported`,
+         npi = `NPI Number`
          ) %>% 
   
   mutate(address_state = state_code,
@@ -123,7 +126,8 @@ closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmacy_Report_2017-2023.xlsx
          `State Physical`, `County Code`,  
          `Dispenser Class\r\nCode`, `Dispenser Type Code`, open24hours,
          `Address1 - Physical`, `Address2 - Physical\r\n`, `City Physical`, `State Physical`, `Zip Code \r\nas reported`,
-         `Store Close Date`) %>% 
+         `Store Close Date`,
+         `NPI Number`) %>% 
   
   rename(ncpdp_id = `Pharmacy NCPDP No`,
          legal_name = `Pharmacy Legal Name`,
@@ -135,7 +139,8 @@ closures17_23 <- read_xlsx(paste0(in_dir, "Closed_Pharmacy_Report_2017-2023.xlsx
          address_street = `Address1 - Physical`, 
          address_street2 = `Address2 - Physical\r\n`,
          address_city = `City Physical`,
-         address_zip = `Zip Code \r\nas reported`
+         address_zip = `Zip Code \r\nas reported`,
+         npi = `NPI Number`
   ) %>% 
   
   mutate(address_state = state_code,
@@ -212,8 +217,14 @@ recode_function <- function(variable) {
 type_vars <- c("type1", "type2", "type3")
 
 for (v in type_vars) {
-  combined_pharmacies[[v]] <- recode_function(combined_pharmacies[[v]])
+  combined_pharmacies[[paste0(v, "R")]] <- recode_function(combined_pharmacies[[v]])
 }
+
+# Add variable for community/retail pharmacy 
+combined_pharmacies <- combined_pharmacies %>% 
+  mutate(community_retail_pharmacy = ifelse(type1 == "01" | type2 == "01" | type3 == "01", 1, 0),
+         community_retail_pharmacy = ifelse(is.na(community_retail_pharmacy), 0, community_retail_pharmacy)) # remove NA values
+  
 
 # Chain Names
 
@@ -315,6 +326,13 @@ combined_pharmacies <- combined_pharmacies %>%
   mutate(county_fips = ifelse(ncpdp_id == "3732105", "40027", county_fips)) %>% 
   mutate(county_fips = ifelse(ncpdp_id == "5939597", "48201", county_fips))
 
+# Select variables 
+
+combined_pharmacies <- combined_pharmacies %>%  
+  select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips, npi,
+         class, classR, type1, type2, type3, type1R, type2R, type3R, community_retail_pharmacy, chain_name, open24hours,
+         everything())
+
 # ------------------------------------------------------------------------------
 
 # Create long version
@@ -354,9 +372,9 @@ startingDF <- expand.grid(ncpdp_id = unique(combined_pharmacies$ncpdp_id), Year 
 
 combined_pharmacies_long <- startingDF %>% 
   
-  left_join(combined_pharmacies %>%  
-              select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips,
-                     classR, chain_name, open24hours,
+  left_join(combined_pharmacies %>% 
+              select(ncpdp_id, legal_name, ncpdp_name, state_code, county_fips, npi,
+                     class, classR, type1, type2, type3, type1R, type2R, type3R, community_retail_pharmacy, chain_name, open24hours,
                      active17_21, opening17_21, closure17_21), by = "ncpdp_id") %>% 
   
   left_join(active_long, by = c("ncpdp_id", "county_fips", "Year")) %>% 

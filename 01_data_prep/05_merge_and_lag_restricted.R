@@ -1,9 +1,11 @@
 # Merged dataset for regressions with lagged economic variables
 # MSahu
-# Dec 20, 2023
+# Dec 20, 2023 (updated Feb 9, 2024)
 
 # This dataset is long on pharmacy and year, with the economic indicators merged;
 # Then we lag the economic indicators by 1 year
+
+ # IN THIS VERSION OF THE FILE, RESTRICT THE COUNTY DATA TO ONLY THE COMMUNITY PHARMACIES
 
 # ------------------------------------------------------------------------------
 
@@ -99,6 +101,12 @@ class_vars <- c("active17_21_indept", "activeJan_indept", "opening_indept", "clo
 
 # ------------------------------------------------------------------------------
 
+# RESTRICT TO ONLY COMMUNITY/RETAIL PHARMACIES
+
+merged_long <- merged_long %>% filter(community_retail_pharmacy == 1)
+
+# ------------------------------------------------------------------------------
+
 # Aggregate at county level 
 
 ids <- merged_long[, c("state_code", "county_fips")] %>% distinct()
@@ -180,6 +188,5 @@ rm(startingDF, ncpdp_long, ncpdp_wide, hrsa, bls, saipe, sahie)
 
 # Save
 
-write.csv(merged_long, paste0(data_dir, "merged_data_long.csv"), row.names = F)
-write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v3.csv"), row.names = F)
-saveRDS(merged_county_lagged, paste0(data_dir, "merged_data_county_updated_v3.rds"))
+write.csv(merged_county_lagged, paste0(data_dir, "merged_data_county_restricted_community_retail.csv"), row.names = F)
+saveRDS(merged_county_lagged, paste0(data_dir, "merged_data_county_restricted_community_retail.rds"))
