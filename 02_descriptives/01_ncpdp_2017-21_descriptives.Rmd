@@ -28,7 +28,7 @@ pacman::p_load(dplyr, gtsummary, kableExtra, flextable, ggplot2,
 dir <- "C:/Users/msahu/OneDrive - UW/Documents/Research/PCMA/"
 in_dir <- paste0(dir, "00_data/processed/NCPDP/")
 
-data17_21 <- readRDS(paste0(in_dir, "ncpdp_cleaned.rds")) %>% 
+data17_21 <- readRDS(paste0(in_dir, "ncpdp_cleaned_with_dc.rds")) %>% 
   
   # Restrict to only those open between 2017-2021
   
@@ -276,9 +276,11 @@ total_countyDF %>% select(`Total pharmacies, Jan 2017 (mean)`,
 
 ```{r, echo = F, warning = F}
 
-plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiff17_21_cat") + 
+plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiff17_21_cat", color = NA) + 
   labs(title = "Difference in total number of pharmacies by county from January 2017 to January 2021",
        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+  geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .1, color = "grey20") +
   scale_fill_brewer(name = "Difference from\n 2017-21 (N)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
   theme(legend.position = "right")  
 ```
@@ -286,9 +288,11 @@ plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiff17
 ## Figure: Percent change in total pharmacies during 2017-2021
 
 ```{r, echo = F, warning = F}
-plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiffPct17_21_cat") + 
+plot_usmap(data = total_countyDF, regions = "counties", values = "pharmacyDiffPct17_21_cat", color = NA) + 
   labs(title = "Percent change in total number of pharmacies by county from January 2017 to January 2021",
        subtitle = paste0(dataset_name, " [Note: gray counties had no pharmacies in 2017-21]")) + 
+    geom_polygon(data = usmapdata::us_map(regions = "states"),
+                 aes(x, y, group = group), fill = NA, size = .1, color = "grey20") +
   scale_fill_brewer(name = "Difference from\n 2017-21 (%)", palette = "RdYlBu", direction = -1, na.value = "grey70") +
   theme(legend.position = "right")  
 ```
