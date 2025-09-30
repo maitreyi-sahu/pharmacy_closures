@@ -1,0 +1,39 @@
+# R session files
+.Rhistory
+.RData
+.Ruserdata
+
+# RStudio project files
+.Rproj.user/
+*.Rproj
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Compiled / intermediate data
+*.csv~
+*.tmp
+*.parquet
+
+# Documents
+*.pdf
+*.docx
+*.pptx
+*.xlsx
+*.odt
+*.rtf
+*.html
+
+# Figures
+*.png
+*.jpg
+*.jpeg
+*.tiff
+
+
+# Logs
+*.log
+
+# Folders
+/02_descriptives/archive/
