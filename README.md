@@ -1,4 +1,4 @@
-This repository contains the code to develop the underlying pharmacy closures and openings database used for two studies:
+### Code to build the pharmacy closures and openings database used in two studies:
 
 > Anderson KE, Sahu M, DiStefano MJ, Asche CV, Mattingly TJ.  **Pharmacy Closures and Anticonvulsant Medication Prescription Fills.** *JAMA.* 2024;332(21):1847–1849. [https://doi.org/10.1001/jama.2024.19993](https://doi.org/10.1001/jama.2024.19993)  
 
